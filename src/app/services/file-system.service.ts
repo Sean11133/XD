@@ -1,10 +1,11 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
 import { Directory } from '../models/directory.model';
 import { FileSystemNode } from '../models/file-system-node.model';
 import { ImageFile } from '../models/image-file.model';
 import { TextFile } from '../models/text-file.model';
 import { WordFile } from '../models/word-file.model';
+import { SearchSubjectService } from '../observers/search-subject.service';
 import { ExtensionSearchVisitor } from '../visitors/extension-search.visitor';
 import { XmlExportVisitor } from '../visitors/xml-export.visitor';
 
@@ -14,6 +15,7 @@ import { XmlExportVisitor } from '../visitors/xml-export.visitor';
  */
 @Injectable({ providedIn: 'root' })
 export class FileSystemService {
+  private readonly searchSubject = inject(SearchSubjectService);
   /**
    * 建構範例檔案樹
    */
@@ -55,12 +57,34 @@ export class FileSystemService {
   }
 
   /**
-   * 依副檔名搜尋（Visitor Pattern）
+   * 依副檔名搜尋（Visitor Pattern + Observer Pattern）
+   * Visitor 走訪時透過 SearchSubjectService 即時通知所有 Observer
    */
   searchByExtension(root: Directory, extension: string): string[] {
-    const visitor = new ExtensionSearchVisitor(extension);
+    // 重置所有節點的高亮狀態
+    this.resetHighlights(root);
+
+    // 建立 Visitor 並注入 Subject，讓走訪過程可以發事件
+    const visitor = new ExtensionSearchVisitor(extension, this.searchSubject);
     root.accept(visitor);
+
+    // 搜尋完成，發出 complete 事件
+    this.searchSubject.notify({
+      type: 'complete',
+      message: `🏁 搜尋完成！共找到 ${visitor.getResults().length} 個結果`,
+    });
+
     return visitor.getResults();
+  }
+
+  /**
+   * 遞迴重置所有節點的高亮狀態
+   */
+  resetHighlights(node: FileSystemNode): void {
+    node.highlightState = 'none';
+    if (node instanceof Directory) {
+      node.children.forEach((child) => this.resetHighlights(child));
+    }
   }
 
   /**

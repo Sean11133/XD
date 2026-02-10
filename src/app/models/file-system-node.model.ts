@@ -1,10 +1,18 @@
 import type { IVisitor } from './visitor.interface';
 
 /**
+ * 搜尋高亮狀態（供 Observer Pattern 的 UI Observer 使用）
+ */
+export type HighlightState = 'none' | 'visiting' | 'matched';
+
+/**
  * Composite Pattern — Component（抽象基類）
  * 定義檔案系統中所有節點的統一介面
  */
 export abstract class FileSystemNode {
+  /** Observer Pattern — UI 狀態：搜尋時的高亮狀態 */
+  highlightState: HighlightState = 'none';
+
   constructor(public name: string) {}
 
   /** Visitor Pattern — 接受訪問者 */

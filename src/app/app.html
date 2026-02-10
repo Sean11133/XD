@@ -1,7 +1,7 @@
 ﻿<div class="container-dark">
   <header>
     <h1>☁️ 雲端檔案管理系統</h1>
-    <div class="badge">Composite + Visitor Pattern</div>
+    <div class="badge">Composite + Visitor + Observer Pattern</div>
   </header>
 
   <div class="layout">
@@ -33,7 +33,7 @@
       </div>
 
       <div class="console-box">
-        <div class="console-header">Terminal Output</div>
+        <div class="console-header">📡 Observer Console — 樹狀訪問即時進度</div>
         <pre class="console-content">{{ consoleOutput() }}</pre>
       </div>
     </div>
@@ -42,7 +42,11 @@
 
 <ng-template #nodeTemplate let-node>
   <li>
-    <div class="node-row">
+    <div
+      class="node-row"
+      [class.highlight-visiting]="node.highlightState === 'visiting'"
+      [class.highlight-matched]="node.highlightState === 'matched'"
+    >
       <span class="icon">{{ node.getIcon() }}</span>
       <span class="name">{{ node.name }}</span>
 
@@ -50,9 +54,13 @@
         <span class="separator">—</span>
         <span class="type-label">{{ node.getTypeLabel() }}</span>
         <span class="details">{{ node.getDetails() }}</span>
+        @if (node.highlightState === 'matched') {
+          <span class="match-badge">✅ MATCH</span>
+        }
       } @else {
         <span class="separator">—</span>
         <span class="type-label-dir">[目錄]</span>
+        <span class="details">({{ node.getSizeKB() }} KB)</span>
       }
     </div>
 
