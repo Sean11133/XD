@@ -1,12 +1,96 @@
 ﻿<div class="container-dark">
   <header>
     <h1>☁️ 雲端檔案管理系統</h1>
-    <div class="badge">Composite + Visitor + Observer Pattern</div>
+    <div class="badge">Composite + Visitor + Observer + Command + Strategy Pattern</div>
   </header>
+
+  <!-- ==========================================
+       Command Pattern — 工具列 (Toolbar)
+       排序 / Undo / Redo / 標籤 / 刪除
+       ========================================== -->
+  <div class="toolbar">
+    <!-- Undo / Redo -->
+    <div class="toolbar-group">
+      <button
+        class="toolbar-btn"
+        (click)="undo()"
+        [disabled]="!commandHistory.canUndo()"
+        title="Undo"
+      >
+        ↩️
+      </button>
+      <button
+        class="toolbar-btn"
+        (click)="redo()"
+        [disabled]="!commandHistory.canRedo()"
+        title="Redo"
+      >
+        ↪️
+      </button>
+    </div>
+
+    <span class="toolbar-divider">|</span>
+
+    <!-- 排序按鈕 (Strategy Pattern) — 點擊三態切換：升冪 → 降冪 → 取消 -->
+    <div class="toolbar-group">
+      <button
+        class="toolbar-btn sort-btn"
+        [class.active-sort]="isSortActive('name')"
+        (click)="sortBy('name')"
+      >
+        {{ getSortIcon('name') }}名稱
+      </button>
+      <button
+        class="toolbar-btn sort-btn"
+        [class.active-sort]="isSortActive('size')"
+        (click)="sortBy('size')"
+      >
+        {{ getSortIcon('size') }}大小
+      </button>
+      <button
+        class="toolbar-btn sort-btn"
+        [class.active-sort]="isSortActive('extension')"
+        (click)="sortBy('extension')"
+      >
+        {{ getSortIcon('extension') }}類型
+      </button>
+      <button
+        class="toolbar-btn sort-btn"
+        [class.active-sort]="isSortActive('tag')"
+        (click)="sortBy('tag')"
+      >
+        {{ getSortIcon('tag') }}標籤
+      </button>
+    </div>
+
+    <span class="toolbar-divider">|</span>
+
+    <!-- 標籤按鈕 -->
+    <div class="toolbar-group">
+      <span class="toolbar-icon">🏷️</span>
+      @for (tag of allTags; track tag) {
+        <button
+          class="tag-btn"
+          [style.background-color]="TAG_COLORS[tag]"
+          [disabled]="!selectedNode()"
+          (click)="toggleTag(tag)"
+        >
+          + {{ tag }}
+        </button>
+      }
+    </div>
+
+    <span class="toolbar-divider">|</span>
+
+    <!-- 刪除按鈕 -->
+    <button class="toolbar-btn delete-btn" [disabled]="!selectedNode()" (click)="deleteSelected()">
+      🗑️ 刪除
+    </button>
+  </div>
 
   <div class="layout">
     <div class="panel tree-panel">
-      <h3 class="panel-title">1. 客戶現有的目錄結構 (Visual Tree)</h3>
+      <h3 class="panel-title">📂 檔案階層 (Composite)</h3>
       <ul class="tree-root">
         <ng-container
           *ngTemplateOutlet="nodeTemplate; context: { $implicit: root() }"
@@ -15,20 +99,20 @@
     </div>
 
     <div class="panel action-panel">
-      <h3 class="panel-title">2. 系統功能操作 (Operations)</h3>
+      <h3 class="panel-title">🧑 訪問者操作 (Visitor)</h3>
 
       <div class="controls">
-        <button (click)="calculateTotalSize()" class="btn btn-blue">📊 計算總容量</button>
-        <button (click)="exportToXml()" class="btn btn-green">📑 匯出 XML</button>
+        <button (click)="calculateTotalSize()" class="btn btn-blue">📊 計算大小</button>
+        <button (click)="exportToXml()" class="btn btn-green">📑 XML 匯出</button>
 
         <div class="search-group">
           <input
             [ngModel]="searchExt()"
             (ngModelChange)="searchExt.set($event)"
-            placeholder=".docx"
+            placeholder="輸入關鍵字..."
             class="input-dark"
           />
-          <button (click)="searchFiles()" class="btn btn-orange">🔍 搜尋</button>
+          <button (click)="searchFiles()" class="btn btn-orange">搜尋 🔍</button>
         </div>
       </div>
 
@@ -40,12 +124,17 @@
   </div>
 </div>
 
+<!-- ==========================================
+     節點遞迴 Template — 含選取、標籤、高亮
+     ========================================== -->
 <ng-template #nodeTemplate let-node>
   <li>
     <div
       class="node-row"
       [class.highlight-visiting]="node.highlightState === 'visiting'"
       [class.highlight-matched]="node.highlightState === 'matched'"
+      [class.node-selected]="isSelected(node)"
+      (click)="selectNode(node); $event.stopPropagation()"
     >
       <span class="icon">{{ node.getIcon() }}</span>
       <span class="name">{{ node.name }}</span>
@@ -61,6 +150,11 @@
         <span class="separator">—</span>
         <span class="type-label-dir">[目錄]</span>
         <span class="details">({{ node.getSizeKB() }} KB)</span>
+      }
+
+      <!-- 標籤顯示 -->
+      @for (tag of node.getTagsArray(); track tag) {
+        <span class="tag-badge" [style.background-color]="getTagColor(tag)">{{ tag }}</span>
       }
     </div>
 

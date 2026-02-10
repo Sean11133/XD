@@ -8,3 +8,4 @@ export { WordFile } from './word-file.model';
 export { ImageFile } from './image-file.model';
 export { TextFile } from './text-file.model';
 export { Directory } from './directory.model';
+export { TagType, TAG_COLORS } from './tag.model';

@@ -16,6 +16,20 @@ export class Directory extends FileSystemNode {
     this.children.push(node);
   }
 
+  /** Command Pattern — 移除子節點（回傳被移除節點的原始位置） */
+  remove(node: FileSystemNode): number {
+    const index = this.children.indexOf(node);
+    if (index !== -1) {
+      this.children.splice(index, 1);
+    }
+    return index;
+  }
+
+  /** Command Pattern — 在指定位置插入子節點（用於 undo 復原） */
+  insertAt(node: FileSystemNode, index: number): void {
+    this.children.splice(index, 0, node);
+  }
+
   getIcon(): string {
     return '📂';
   }

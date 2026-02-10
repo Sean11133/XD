@@ -1,3 +1,4 @@
+import { TagType } from './tag.model';
 import type { IVisitor } from './visitor.interface';
 
 /**
@@ -13,7 +14,15 @@ export abstract class FileSystemNode {
   /** Observer Pattern — UI 狀態：搜尋時的高亮狀態 */
   highlightState: HighlightState = 'none';
 
+  /** Command Pattern — 標籤集合（可貼多個標籤） */
+  tags: Set<TagType> = new Set();
+
   constructor(public name: string) {}
+
+  /** 取得標籤陣列（供 Template @for 使用，Set 在 strict 模式下需轉為陣列） */
+  getTagsArray(): TagType[] {
+    return Array.from(this.tags);
+  }
 
   /** Visitor Pattern — 接受訪問者 */
   abstract accept(visitor: IVisitor): void;

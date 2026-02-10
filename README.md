@@ -1,6 +1,6 @@
 # ☁️ 雲端檔案管理系統 — Design Patterns Demo
 
-> 以 **Angular 21** 打造的互動式範例專案，深入展示 **Composite Pattern**、**Visitor Pattern** 與 **Observer Pattern** 的實務應用。
+> 以 **Angular 21** 打造的互動式範例專案，深入展示 **Composite Pattern**、**Visitor Pattern**、**Observer Pattern**、**Command Pattern** 與 **Strategy Pattern** 的實務應用。
 
 [![Angular](https://img.shields.io/badge/Angular-21-dd0031?logo=angular&logoColor=white)](https://angular.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -16,6 +16,8 @@
   - [Composite Pattern（組合模式）](#composite-pattern組合模式)
   - [Visitor Pattern（訪問者模式）](#visitor-pattern訪問者模式)
   - [Observer Pattern（觀察者模式）](#observer-pattern觀察者模式)
+  - [Command Pattern（命令模式）](#command-pattern命令模式)
+  - [Strategy Pattern（策略模式）](#strategy-pattern策略模式)
 - [類別架構圖](#-類別架構圖)
 - [技術棧](#-技術棧)
 - [快速開始](#-快速開始)
@@ -33,6 +35,10 @@
 - 📑 將整棵目錄樹匯出為 XML 格式（Visitor Pattern）
 - 🔍 依副檔名搜尋檔案（Visitor + Observer Pattern）
 - 📡 搜尋時即時高亮匹配節點 + Console 顯示樹狀走訪進度（Observer Pattern）
+- 🔀 多維度排序 — 依名稱、大小、副檔名，支援升冪 / 降冪（Strategy Pattern）
+- 🗑️ 刪除檔案或資料夾（Command Pattern）
+- 🏷️ 標籤管理 — Urgent / Work / Personal，支援多標籤（Command Pattern）
+- ↩️ Undo / Redo — 所有操作皆可撤銷與重做（Command Pattern）
 
 透過真實的業務情境來理解設計模式，而非僅止於抽象概念。
 
@@ -46,7 +52,22 @@
 ┌──────────────────────────────────────────────────────────┐
 │                    View Layer (Component)                 │
 │           app.ts  ·  app.html  ·  app.scss               │
-│    UI 呈現 + 事件綁定 + Observer 訂閱搜尋事件             │
+│    UI 呈現 + 事件綁定 + Observer 訂閱 + Command 調用      │
+├──────────────────────────────────────────────────────────┤
+│                    Command Layer                         │
+│    commands/command.interface.ts    (ICommand)            │
+│    commands/command-history.ts      (Invoker)             │
+│    commands/sort.command.ts         (Concrete Command)    │
+│    commands/delete.command.ts       (Concrete Command)    │
+│    commands/tag.command.ts          (Concrete Command)    │
+│       Command Pattern：封裝操作 + Undo/Redo 歷史管理      │
+├──────────────────────────────────────────────────────────┤
+│                    Strategy Layer                         │
+│    strategies/sort-strategy.interface.ts  (ISortStrategy) │
+│    strategies/sort-by-name.strategy.ts                    │
+│    strategies/sort-by-size.strategy.ts                    │
+│    strategies/sort-by-extension.strategy.ts               │
+│       Strategy Pattern：排序演算法抽換                     │
 ├──────────────────────────────────────────────────────────┤
 │                    Service Layer                         │
 │              services/file-system.service.ts              │
@@ -68,6 +89,7 @@
 │    models/word-file.model.ts         (Leaf)              │
 │    models/image-file.model.ts        (Leaf)              │
 │    models/text-file.model.ts         (Leaf)              │
+│    models/tag.model.ts               (TagType enum)      │
 │    models/visitor.interface.ts        (Interface)         │
 │       定義領域物件 + Composite Pattern 結構               │
 └──────────────────────────────────────────────────────────┘
@@ -79,15 +101,18 @@
 | **Visitor**  | `visitors/`                        | 實作具體 Visitor 操作，與 Model 解耦                        | 開放封閉、單一職責 |
 | **Observer** | `observers/`                       | 管理搜尋事件流（Subject + Event），通知 UI 即時更新         | 觀察者、開放封閉   |
 | **Service**  | `services/`                        | 封裝業務邏輯，透過 Angular DI 注入至 Component              | 依賴反轉           |
-| **View**     | `app.ts` + `app.html` + `app.scss` | UI 呈現 + Observer 訂閱事件流，驅動高亮與進度顯示           | 關注點分離         |
+| **Strategy** | `strategies/`                      | 封裝排序演算法，可自由抽換不同排序策略                      | 開放封閉、單一職責 |
+| **Command**  | `commands/`                        | 封裝操作為物件，統一管理執行 / 撤銷 / 重做                  | 單一職責、開放封閉 |
+| **View**     | `app.ts` + `app.html` + `app.scss` | UI 呈現 + Observer 訂閱 + Command 調用                      | 關注點分離         |
 
 ### 分層優勢
 
-- ✅ **關注點分離**：Model / 業務邏輯 / Observer / UI 各司其職
-- ✅ **可測試性**：Service 可獨立進行單元測試，不依賴 DOM
-- ✅ **可擴展性**：新增 Visitor 或 Model 不影響其他層
+- ✅ **關注點分離**：Model / 業務邏輯 / Observer / Command / Strategy / UI 各司其職
+- ✅ **可測試性**：Service、Command、Strategy 可獨立進行單元測試，不依賴 DOM
+- ✅ **可擴展性**：新增 Visitor、Command 或 Strategy 不影響其他層
 - ✅ **鬆耦合通知**：Observer Layer 讓 Visitor 與 UI 無直接依賴
-- ✅ **Angular 最佳實踐**：使用 `inject()` + `providedIn: 'root'` 管理依賴
+- ✅ **操作可逆**：Command Layer 讓所有操作都可以 Undo / Redo
+- ✅ **Angular 最佳實踐**：使用 `inject()` + `providedIn: 'root'` + Signals 管理依賴與狀態
 
 ---
 
@@ -316,6 +341,300 @@ class App implements OnInit, OnDestroy {
 
 ---
 
+### Command Pattern（命令模式）
+
+> **意圖**：將操作封裝為物件，使得可以對操作進行參數化、佇列化、記錄、以及撤銷 / 重做。
+
+#### 問題場景
+
+使用者對檔案樹執行「排序」、「刪除」、「標籤」等操作後，希望能隨時**撤銷（Undo）**或**重做（Redo）**。若在 Component 中直接修改資料，將導致無法追蹤操作歷史，也無法實現 Undo/Redo。
+
+#### 解決方案
+
+```
+使用者操作（排序 / 刪除 / 標籤）
+    │
+    ▼
+┌──────────────────────────────────┐
+│  App Component（Client）         │  ← 根據使用者動作建立 Command 物件
+│  建立 Concrete Command           │
+└──────────────┬───────────────────┘
+               │ executeCommand(cmd)
+               ▼
+┌──────────────────────────────────┐
+│  CommandHistory（Invoker）       │  ← 執行命令 + 管理 Undo/Redo 堆疊
+│  undoStack ← [cmd1, cmd2, ...]  │
+│  redoStack ← [cmd3, ...]        │
+└──────────────┬───────────────────┘
+               │ cmd.execute() / cmd.undo()
+               ▼
+┌──────────────────────────────────┐
+│  Concrete Commands               │
+│  ┌────────────────────────────┐  │
+│  │ SortCommand                │  │  ← 保存排序前快照，undo 還原順序
+│  ├────────────────────────────┤  │
+│  │ DeleteCommand              │  │  ← 保存被刪位置，undo 插回原處
+│  ├────────────────────────────┤  │
+│  │ TagCommand                 │  │  ← 記錄 add/remove，undo 反向操作
+│  └────────────────────────────┘  │
+└──────────────────────────────────┘
+```
+
+#### 類別角色對應
+
+| 角色                   | 類別 / 元件                   | 職責                                                                    |
+| ---------------------- | ----------------------------- | ----------------------------------------------------------------------- |
+| **Command（介面）**    | `ICommand`                    | 定義 `execute()`, `undo()`, `description` 統一介面                      |
+| **Concrete Command**   | `SortCommand`                 | 封裝排序操作，保存排序前的快照以支援 undo                               |
+| **Concrete Command**   | `DeleteCommand`               | 封裝刪除操作，記錄被刪節點的 parent + index                             |
+| **Concrete Command**   | `TagCommand`                  | 封裝標籤操作（add/remove），undo 時反向操作                             |
+| **Invoker（調用者）**  | `CommandHistory`              | 管理 undoStack / redoStack，提供 `executeCommand()`, `undo()`, `redo()` |
+| **Client（客戶端）**   | `App` Component               | 根據使用者操作建立 Command 物件，交給 Invoker 執行                      |
+| **Receiver（接收者）** | `Directory`, `FileSystemNode` | 實際被操作的領域物件                                                    |
+
+#### 核心程式碼
+
+```typescript
+// Command 介面 — 所有操作的統一契約
+interface ICommand {
+  execute(): void;
+  undo(): void;
+  readonly description: string;
+}
+
+// Invoker — 管理命令歷史（Angular Signal 驅動 UI 更新）
+@Injectable({ providedIn: 'root' })
+class CommandHistory {
+  private undoStack = signal<ICommand[]>([]);
+  private redoStack = signal<ICommand[]>([]);
+
+  canUndo = computed(() => this.undoStack().length > 0);
+  canRedo = computed(() => this.redoStack().length > 0);
+
+  executeCommand(command: ICommand): void {
+    command.execute();
+    this.undoStack.update((s) => [...s, command]);
+    this.redoStack.set([]); // 新操作清空 redo 分支
+  }
+
+  undo(): ICommand | undefined {
+    const stack = this.undoStack();
+    if (stack.length === 0) return undefined;
+    const cmd = stack[stack.length - 1];
+    cmd.undo();
+    this.undoStack.set(stack.slice(0, -1));
+    this.redoStack.update((r) => [...r, cmd]);
+    return cmd;
+  }
+
+  redo(): ICommand | undefined {
+    const redo = this.redoStack();
+    if (redo.length === 0) return undefined;
+    const cmd = redo[redo.length - 1];
+    cmd.execute();
+    this.redoStack.set(redo.slice(0, -1));
+    this.undoStack.update((u) => [...u, cmd]);
+    return cmd;
+  }
+}
+
+// Concrete Command — 刪除（保存位置以支援 undo）
+class DeleteCommand implements ICommand {
+  private removedIndex = -1;
+
+  constructor(
+    private node: FileSystemNode,
+    private parent: Directory,
+  ) {}
+
+  execute(): void {
+    this.removedIndex = this.parent.remove(this.node);
+  }
+  undo(): void {
+    this.parent.insertAt(this.node, this.removedIndex);
+  }
+}
+
+// Client — Component 建立並執行命令
+class App {
+  private commandHistory = inject(CommandHistory);
+
+  deleteSelected(): void {
+    const cmd = new DeleteCommand(selectedNode, parentDir);
+    this.commandHistory.executeCommand(cmd);
+  }
+
+  undo(): void {
+    this.commandHistory.undo();
+  }
+  redo(): void {
+    this.commandHistory.redo();
+  }
+}
+```
+
+#### Undo / Redo 堆疊運作流程
+
+```
+操作序列：Sort → Delete → Tag
+
+          undoStack              redoStack
+Sort   → [Sort]                 []
+Delete → [Sort, Delete]         []
+Tag    → [Sort, Delete, Tag]    []
+
+Undo   → [Sort, Delete]         [Tag]
+Undo   → [Sort]                 [Tag, Delete]
+Redo   → [Sort, Delete]         [Tag]
+
+新操作  → [Sort, Delete, NewCmd] []    ← redo 分支清空
+```
+
+#### 設計優勢
+
+- ✅ **操作可逆**：每個 Command 自行管理 execute/undo 邏輯
+- ✅ **統一介面**：Invoker 不需知道具體操作類型，只呼叫 ICommand
+- ✅ **歷史記錄**：undoStack / redoStack 完整追蹤操作順序
+- ✅ **可擴展**：新增操作只需新建 Command 類別，不修改 Invoker
+- ✅ **Signal 驅動**：`canUndo` / `canRedo` 為 computed signal，UI 自動更新按鈕狀態
+
+---
+
+### Strategy Pattern（策略模式）
+
+> **意圖**：定義一系列演算法，將每個演算法封裝起來，使它們可以互相替換。讓演算法的變化獨立於使用它的客戶端。
+
+#### 問題場景
+
+檔案排序需要支援**多種維度**（名稱、大小、副檔名）以及**升冪 / 降冪**。若在 Component 中用 `if-else` 或 `switch` 判斷排序方式，將導致**條件邏輯膨脹**且違反**開放封閉原則**。
+
+#### 解決方案
+
+```
+使用者選擇排序方式
+    │
+    ├── 依名稱 → SortByNameStrategy
+    ├── 依大小 → SortBySizeStrategy
+    └── 依類型 → SortByExtensionStrategy
+                    │
+                    ▼
+            ┌──────────────────┐
+            │ ISortStrategy    │  ← 統一介面
+            │ + name: string   │
+            │ + sort(nodes)    │
+            └──────────────────┘
+                    │
+                    ▼
+            ┌──────────────────┐
+            │ SortCommand      │  ← Context：持有策略並委派排序
+            │ + strategy       │
+            │ + execute()      │
+            └──────────────────┘
+```
+
+#### 類別角色對應
+
+| 角色                  | 類別                      | 職責                                            |
+| --------------------- | ------------------------- | ----------------------------------------------- |
+| **Strategy（介面）**  | `ISortStrategy`           | 定義 `name` + `sort(nodes)` 統一介面            |
+| **Concrete Strategy** | `SortByNameStrategy`      | 依名稱字典序排序，支援升冪 / 降冪               |
+| **Concrete Strategy** | `SortBySizeStrategy`      | 依檔案大小（KB）排序，支援升冪 / 降冪           |
+| **Concrete Strategy** | `SortByExtensionStrategy` | 依副檔名排序（目錄排最前），支援升冪 / 降冪     |
+| **Context（使用者）** | `SortCommand`             | 持有 ISortStrategy，在 execute() 中委派排序邏輯 |
+
+#### 核心程式碼
+
+```typescript
+// Strategy 介面
+interface ISortStrategy {
+  readonly name: string;
+  sort(nodes: FileSystemNode[]): FileSystemNode[];
+}
+
+// Concrete Strategy — 依名稱排序
+class SortByNameStrategy implements ISortStrategy {
+  constructor(private ascending = true) {}
+
+  get name() { return `名稱${this.ascending ? '升冪 ↑' : '降冪 ↓'}`; }
+
+  sort(nodes: FileSystemNode[]): FileSystemNode[] {
+    return [...nodes].sort((a, b) => {
+      const result = a.name.localeCompare(b.name, 'zh-Hant');
+      return this.ascending ? result : -result;
+    });
+  }
+}
+
+// Concrete Strategy — 依副檔名排序（目錄優先）
+class SortByExtensionStrategy implements ISortStrategy {
+  sort(nodes: FileSystemNode[]): FileSystemNode[] {
+    return [...nodes].sort((a, b) => {
+      const extA = a instanceof Directory ? '' : this.getExtension(a);
+      const extB = b instanceof Directory ? '' : this.getExtension(b);
+      return extA.localeCompare(extB);
+    });
+  }
+}
+
+// Context — SortCommand 持有策略
+class SortCommand implements ICommand {
+  private previousOrders = new Map<Directory, FileSystemNode[]>();
+
+  constructor(private root: Directory, private strategy: ISortStrategy) {}
+
+  execute(): void {
+    this.previousOrders.clear();
+    this.sortRecursive(this.root);
+  }
+
+  undo(): void {
+    for (const [dir, original] of this.previousOrders) {
+      dir.children = [...original];
+    }
+  }
+}
+
+// Client — Component 建立策略並注入 Command
+sortBy(type: 'name' | 'size' | 'extension'): void {
+  const strategies = {
+    name: new SortByNameStrategy(this.sortAscending()),
+    size: new SortBySizeStrategy(this.sortAscending()),
+    extension: new SortByExtensionStrategy(this.sortAscending()),
+  };
+  const cmd = new SortCommand(this.root, strategies[type]);
+  this.commandHistory.executeCommand(cmd);
+}
+```
+
+#### Strategy × Command 協作
+
+```
+┌─────────────┐    建立    ┌──────────────┐    委派    ┌───────────────────┐
+│ App (Client)│ ─────────▶ │ SortCommand  │ ─────────▶ │ ISortStrategy     │
+│ sortBy()    │            │ (Command)    │            │ .sort(children)   │
+└─────────────┘            └──────┬───────┘            └───────────────────┘
+                                  │
+                           executeCommand()
+                                  │
+                                  ▼
+                           ┌──────────────┐
+                           │CommandHistory │
+                           │  (Invoker)   │
+                           └──────────────┘
+```
+
+> **Command** 負責「何時執行 + 如何撤銷」，**Strategy** 負責「如何排序」——兩個模式各司其職，互不侵犯。
+
+#### 設計優勢
+
+- ✅ **消除條件分支**：不再需要 if-else 判斷排序類型
+- ✅ **開放封閉原則**：新增排序方式只需新建 Strategy 類別
+- ✅ **可組合**：Strategy 注入 Command，Command 注入 Invoker，層層組合
+- ✅ **單一職責**：每個 Strategy 只負責一種排序演算法
+- ✅ **可獨立測試**：Strategy 是純函式，不依賴 Angular 或 DOM
+
+---
+
 ## 📐 類別架構圖
 
 ```
@@ -324,22 +643,24 @@ class App implements OnInit, OnDestroy {
 │  ───────────────────────────────────────────────────────────    │
 │  + name: string                                                 │
 │  + highlightState: HighlightState    ← Observer Pattern UI 狀態 │
+│  + tags: Set<TagType>                ← Command Pattern 標籤     │
 │  + accept(visitor: IVisitor): void                              │
 │  + getSizeKB(): number                                          │
 │  + getIcon(): string                                            │
 │  + getTypeLabel(): string                                       │
 │  + getDetails(): string                                         │
+│  + getTagsArray(): TagType[]                                    │
 └──────────┬──────────────────────────────────┬───────────────────┘
            │                                  │
            ▼                                  ▼
-┌──────────────────────┐          ┌──────────────────────────┐
-│  FileNode (Abstract) │          │   Directory (Composite)  │
-│  + sizeKB: number    │          │  + children: FSNode[]    │
-│  + getSizeKB()       │          │  + add(node): void       │
-└──────┬───────────────┘          │  + getSizeKB() → Σ child │
-       │                          └──────────────────────────┘
-       ├──────────────────┐
-       │                  │
+┌──────────────────────┐          ┌───────────────────────────────┐
+│  FileNode (Abstract) │          │   Directory (Composite)       │
+│  + sizeKB: number    │          │  + children: FSNode[]         │
+│  + getSizeKB()       │          │  + add(node): void            │
+└──────┬───────────────┘          │  + remove(node): number       │
+       │                          │  + insertAt(node, idx): void  │
+       ├──────────────────┐       │  + getSizeKB() → Σ child      │
+       │                  │       └───────────────────────────────┘
        ▼                  ▼
 ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
 │   WordFile   │ │  ImageFile   │ │   TextFile   │
@@ -380,6 +701,47 @@ class App implements OnInit, OnDestroy {
 │                                        │    → 更新 TreeView 高亮     │    │
 │                                        │    → 累加 Console 進度      │    │
 │                                        └────────────────────────────┘    │
+└──────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│                     Command Pattern                                      │
+├──────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ┌──────────────────────────┐     ┌─────────────────────────────────┐   │
+│  │  ICommand (Interface)    │     │  CommandHistory (Invoker)       │   │
+│  │  + execute(): void       │◄────│  - undoStack: Signal<ICommand[]>│   │
+│  │  + undo(): void          │     │  - redoStack: Signal<ICommand[]>│   │
+│  │  + description: string   │     │  + canUndo: computed            │   │
+│  └─────────┬────────────────┘     │  + canRedo: computed            │   │
+│            │ implements           │  + executeCommand(cmd)          │   │
+│     ┌──────┼──────────┐           │  + undo() / redo()             │   │
+│     │      │          │           └─────────────────────────────────┘   │
+│     ▼      ▼          ▼                                                  │
+│  ┌──────┐┌──────┐┌─────────┐                                            │
+│  │Sort  ││Delete││Tag      │                                            │
+│  │Cmd   ││Cmd   ││Cmd      │                                            │
+│  │──────││──────││─────────│                                            │
+│  │+strat││+node ││+node    │                                            │
+│  │+prev ││+paren││+tag     │                                            │
+│  │Orders││+index││+action  │                                            │
+│  └──┬───┘└──────┘└─────────┘                                            │
+│     │ uses                                                               │
+│     ▼                                                                    │
+│  ┌──────────────────────────────────────────────────────────────────┐    │
+│  │                    Strategy Pattern                              │    │
+│  ├──────────────────────────────────────────────────────────────────┤    │
+│  │  ┌────────────────────┐                                          │    │
+│  │  │ ISortStrategy      │                                          │    │
+│  │  │ + name: string     │                                          │    │
+│  │  │ + sort(nodes)      │                                          │    │
+│  │  └────────┬───────────┘                                          │    │
+│  │           │ implements                                           │    │
+│  │     ┌─────┼─────────────┐                                        │    │
+│  │     ▼     ▼             ▼                                        │    │
+│  │  ┌──────┐┌──────┐┌───────────┐                                   │    │
+│  │  │ByName││BySize││ByExtension│                                   │    │
+│  │  └──────┘└──────┘└───────────┘                                   │    │
+│  └──────────────────────────────────────────────────────────────────┘    │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -448,6 +810,7 @@ design-pattern/
 │   │   │   ├── image-file.model.ts               #   ImageFile (Leaf)
 │   │   │   ├── text-file.model.ts                #   TextFile (Leaf)
 │   │   │   ├── directory.model.ts                #   Directory (Composite)
+│   │   │   ├── tag.model.ts                      #   TagType enum + TAG_COLORS
 │   │   │   └── index.ts                          #   Barrel export
 │   │   │
 │   │   ├── visitors/                             # 🔄 Visitor 層
@@ -458,6 +821,21 @@ design-pattern/
 │   │   ├── observers/                            # 📡 Observer 層
 │   │   │   ├── search-event.model.ts             #   SearchEvent 事件資料定義
 │   │   │   ├── search-subject.service.ts          #   SearchSubjectService（Subject）
+│   │   │   └── index.ts                          #   Barrel export
+│   │   │
+│   │   ├── commands/                             # 🎮 Command 層
+│   │   │   ├── command.interface.ts              #   ICommand 介面定義
+│   │   │   ├── command-history.ts                #   CommandHistory（Invoker）
+│   │   │   ├── sort.command.ts                   #   SortCommand（排序命令）
+│   │   │   ├── delete.command.ts                 #   DeleteCommand（刪除命令）
+│   │   │   ├── tag.command.ts                    #   TagCommand（標籤命令）
+│   │   │   └── index.ts                          #   Barrel export
+│   │   │
+│   │   ├── strategies/                           # 🔀 Strategy 層
+│   │   │   ├── sort-strategy.interface.ts        #   ISortStrategy 介面定義
+│   │   │   ├── sort-by-name.strategy.ts          #   依名稱排序策略
+│   │   │   ├── sort-by-size.strategy.ts          #   依大小排序策略
+│   │   │   ├── sort-by-extension.strategy.ts     #   依副檔名排序策略
 │   │   │   └── index.ts                          #   Barrel export
 │   │   │
 │   │   ├── services/                             # ⚙️ Service 層
@@ -485,14 +863,18 @@ design-pattern/
 
 ## 🎮 功能展示
 
-| 功能                    | 使用的模式         | 說明                                                     |
-| ----------------------- | ------------------ | -------------------------------------------------------- |
-| 📊 **計算總容量**       | Composite          | 遞迴加總所有子節點的 `getSizeKB()`                       |
-| 📑 **匯出 XML**         | Visitor            | `XmlExportVisitor` 遍歷樹並生成 XML                      |
-| 🔍 **副檔名搜尋**       | Visitor + Observer | `ExtensionSearchVisitor` 走訪時透過 Subject 即時發送事件 |
-| 🌲 **目錄樹顯示**       | Composite          | Angular Template 遞迴渲染巢狀結構                        |
-| ✨ **搜尋即時高亮**     | Observer           | 節點 `highlightState` 隨事件更新，TreeView 即時反映      |
-| 📡 **Console 走訪進度** | Observer           | 訂閱事件流，逐行顯示 Visitor 的樹狀走訪軌跡              |
+| 功能                     | 使用的模式         | 說明                                                     |
+| ------------------------ | ------------------ | -------------------------------------------------------- |
+| 📊 **計算總容量**        | Composite          | 遞迴加總所有子節點的 `getSizeKB()`                       |
+| 📑 **匯出 XML**          | Visitor            | `XmlExportVisitor` 遍歷樹並生成 XML                      |
+| 🔍 **副檔名搜尋**        | Visitor + Observer | `ExtensionSearchVisitor` 走訪時透過 Subject 即時發送事件 |
+| 🌲 **目錄樹顯示**        | Composite          | Angular Template 遞迴渲染巢狀結構                        |
+| ✨ **搜尋即時高亮**      | Observer           | 節點 `highlightState` 隨事件更新，TreeView 即時反映      |
+| 📡 **Console 走訪進度**  | Observer           | 訂閱事件流，逐行顯示 Visitor 的樹狀走訪軌跡              |
+| 🔀 **多維度排序**        | Command + Strategy | 三種 Strategy（名稱 / 大小 / 副檔名）注入 SortCommand    |
+| 🗑️ **刪除檔案 / 資料夾** | Command            | `DeleteCommand` 保存位置，undo 時插回原處                |
+| 🏷️ **標籤管理**          | Command            | `TagCommand` 支援 add/remove，三種標籤可多重貼           |
+| ↩️ **Undo / Redo**       | Command            | `CommandHistory` 管理雙堆疊，所有操作皆可撤銷重做        |
 
 ---
 
@@ -548,6 +930,8 @@ export class SizeReportVisitor implements IVisitor {
 - [Refactoring Guru — Composite Pattern](https://refactoring.guru/design-patterns/composite)
 - [Refactoring Guru — Visitor Pattern](https://refactoring.guru/design-patterns/visitor)
 - [Refactoring Guru — Observer Pattern](https://refactoring.guru/design-patterns/observer)
+- [Refactoring Guru — Command Pattern](https://refactoring.guru/design-patterns/command)
+- [Refactoring Guru — Strategy Pattern](https://refactoring.guru/design-patterns/strategy)
 - [Angular Official Documentation](https://angular.dev/)
 - [RxJS — Subject](https://rxjs.dev/guide/subject)
 
