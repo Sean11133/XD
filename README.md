@@ -745,6 +745,294 @@ sortBy(type: 'name' | 'size' | 'extension'): void {
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
+### Composite + Visitor Pattern
+
+```mermaid
+classDiagram
+    direction TB
+
+    class FileSystemNode {
+        <<abstract>>
+        +name: string
+        +highlightState: HighlightState
+        +tags: Set~TagType~
+        +accept(visitor: IVisitor) void
+        +getSizeKB() number*
+        +getIcon() string*
+        +getTypeLabel() string*
+        +getDetails() string*
+        +getTagsArray() TagType[]
+    }
+
+    class FileNode {
+        <<abstract>>
+        +sizeKB: number
+        +getSizeKB() number
+    }
+
+    class Directory {
+        +children: FileSystemNode[]
+        +add(node) void
+        +remove(node) number
+        +insertAt(node, idx) void
+        +getSizeKB() number
+        +accept(visitor) void
+    }
+
+    class WordFile {
+        +pages: number
+        +getIcon() string
+        +accept(visitor) void
+    }
+
+    class ImageFile {
+        +width: number
+        +height: number
+        +getIcon() string
+        +accept(visitor) void
+    }
+
+    class TextFile {
+        +encoding: string
+        +getIcon() string
+        +accept(visitor) void
+    }
+
+    class IVisitor {
+        <<interface>>
+        +visitDirectory(dir: Directory) void
+        +visitWordFile(file: WordFile) void
+        +visitImageFile(file: ImageFile) void
+        +visitTextFile(file: TextFile) void
+    }
+
+    class XmlExportVisitor {
+        -xmlResult: string
+        +getResult() string
+        +visitDirectory(dir) void
+        +visitWordFile(file) void
+        +visitImageFile(file) void
+        +visitTextFile(file) void
+    }
+
+    class ExtensionSearchVisitor {
+        -ext: string
+        -subject?: SearchSubjectService
+        -results: string[]
+        +getResults() string[]
+        +visitDirectory(dir) void
+        +visitWordFile(file) void
+        +visitImageFile(file) void
+        +visitTextFile(file) void
+    }
+
+    FileSystemNode <|-- FileNode
+    FileSystemNode <|-- Directory
+    FileNode <|-- WordFile
+    FileNode <|-- ImageFile
+    FileNode <|-- TextFile
+
+    Directory o-- FileSystemNode : children
+
+    IVisitor <|.. XmlExportVisitor
+    IVisitor <|.. ExtensionSearchVisitor
+
+    FileSystemNode ..> IVisitor : accept(visitor)
+```
+
+### Observer Pattern
+
+```mermaid
+classDiagram
+    direction LR
+
+    class SearchEvent {
+        <<interface>>
+        +type: visiting | matched | complete
+        +node?: FileSystemNode
+        +message: string
+    }
+
+    class SearchSubjectService {
+        -searchEvent$: Subject~SearchEvent~
+        +events$: Observable~SearchEvent~
+        +notify(event: SearchEvent) void
+    }
+
+    class AppComponent_Observer {
+        -subscription: Subscription
+        +ngOnInit() void
+        +ngOnDestroy() void
+        -onSearchEvent(event) void
+    }
+
+    class ExtensionSearchVisitor_Sender {
+        -subject?: SearchSubjectService
+        +visitDirectory(dir) void
+    }
+
+    SearchSubjectService --> SearchEvent : 發送
+    ExtensionSearchVisitor_Sender ..> SearchSubjectService : notify()
+    AppComponent_Observer ..> SearchSubjectService : subscribe / unsubscribe
+    SearchSubjectService --> AppComponent_Observer : events$
+```
+
+### Command + Strategy Pattern
+
+```mermaid
+classDiagram
+    direction TB
+
+    class ICommand {
+        <<interface>>
+        +execute() void
+        +undo() void
+        +description: string
+    }
+
+    class CommandHistory {
+        <<Invoker>>
+        -undoStack: Signal~ICommand[]~
+        -redoStack: Signal~ICommand[]~
+        +canUndo: computed~boolean~
+        +canRedo: computed~boolean~
+        +executeCommand(cmd: ICommand) void
+        +undo() ICommand | undefined
+        +redo() ICommand | undefined
+        +clear() void
+    }
+
+    class SortCommand {
+        -root: Directory
+        -strategy: ISortStrategy
+        -previousOrders: Map~Directory, FileSystemNode[]~
+        +execute() void
+        +undo() void
+    }
+
+    class DeleteCommand {
+        -node: FileSystemNode
+        -parent: Directory
+        -removedIndex: number
+        +execute() void
+        +undo() void
+    }
+
+    class TagCommand {
+        -node: FileSystemNode
+        -tag: TagType
+        -action: add | remove
+        +execute() void
+        +undo() void
+    }
+
+    class ISortStrategy {
+        <<interface>>
+        +name: string
+        +sort(nodes: FileSystemNode[]) FileSystemNode[]
+    }
+
+    class SortByNameStrategy {
+        -ascending: boolean
+        +sort(nodes) FileSystemNode[]
+    }
+
+    class SortBySizeStrategy {
+        -ascending: boolean
+        +sort(nodes) FileSystemNode[]
+    }
+
+    class SortByExtensionStrategy {
+        -ascending: boolean
+        +sort(nodes) FileSystemNode[]
+    }
+
+    class SortByTagStrategy {
+        -ascending: boolean
+        +sort(nodes) FileSystemNode[]
+    }
+
+    ICommand <|.. SortCommand
+    ICommand <|.. DeleteCommand
+    ICommand <|.. TagCommand
+
+    CommandHistory o-- ICommand : manages
+
+    SortCommand --> ISortStrategy : uses
+
+    ISortStrategy <|.. SortByNameStrategy
+    ISortStrategy <|.. SortBySizeStrategy
+    ISortStrategy <|.. SortByExtensionStrategy
+    ISortStrategy <|.. SortByTagStrategy
+
+    SortCommand --> Directory : sorts recursively
+    DeleteCommand --> Directory : remove / insertAt
+    TagCommand --> FileSystemNode : tags.add / delete
+```
+
+### 全域互動關係總覽
+
+```mermaid
+flowchart TB
+    subgraph View["🖥️ View Layer"]
+        App["App Component<br/>(Client + Observer)"]
+    end
+
+    subgraph Command["🎮 Command Layer"]
+        CH["CommandHistory<br/>(Invoker)"]
+        SC["SortCommand"]
+        DC["DeleteCommand"]
+        TC["TagCommand"]
+    end
+
+    subgraph Strategy["🔀 Strategy Layer"]
+        ISS["ISortStrategy"]
+        BN["ByName"]
+        BS["BySize"]
+        BE["ByExtension"]
+        BT["ByTag"]
+    end
+
+    subgraph Observer["📡 Observer Layer"]
+        SSS["SearchSubjectService<br/>(Subject)"]
+        SE["SearchEvent"]
+    end
+
+    subgraph Visitor["🔄 Visitor Layer"]
+        XV["XmlExportVisitor"]
+        ESV["ExtensionSearchVisitor"]
+    end
+
+    subgraph Model["🏗️ Model Layer"]
+        FSN["FileSystemNode"]
+        DIR["Directory"]
+        LEAF["WordFile / ImageFile / TextFile"]
+    end
+
+    App -->|executeCommand| CH
+    CH -->|execute / undo| SC & DC & TC
+    SC -->|delegates sort| ISS
+    ISS --- BN & BS & BE & BT
+
+    App -->|subscribe| SSS
+    SSS -->|events$| App
+    ESV -->|notify| SSS
+
+    App -->|triggers| XV & ESV
+    XV & ESV -->|accept / visit| FSN
+    FSN --- DIR & LEAF
+
+    SC & DC -->|modifies| DIR
+    TC -->|modifies| FSN
+
+    style View fill:#1e3a5f,stroke:#3794d4,color:#fff
+    style Command fill:#3a1e1e,stroke:#d44,color:#fff
+    style Strategy fill:#1e3a2e,stroke:#2da042,color:#fff
+    style Observer fill:#3a2e1e,stroke:#d18616,color:#fff
+    style Visitor fill:#2e1e3a,stroke:#9b59b6,color:#fff
+    style Model fill:#1e1e1e,stroke:#666,color:#fff
+```
+
 ---
 
 ## 🛠 技術棧
