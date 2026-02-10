@@ -1,0 +1,209 @@
+/* ==========================================
+   Dark Theme Styles — 復刻黑底白字風格
+   ========================================== */
+
+:host {
+  display: block;
+  height: 100vh;
+  background-color: #121212;
+  color: #e0e0e0;
+  font-family: 'Consolas', 'Monaco', 'Microsoft JhengHei', monospace;
+}
+
+.container-dark {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Header */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #333;
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #fff;
+}
+
+.badge {
+  background: #333;
+  color: #aaa;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+/* Layout */
+.layout {
+  display: flex;
+  gap: 20px;
+}
+
+.panel {
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.tree-panel {
+  flex: 2;
+  min-height: 500px;
+  overflow-y: auto;
+}
+
+.action-panel {
+  flex: 1;
+}
+
+.panel-title {
+  margin-top: 0;
+  border-bottom: 1px solid #333;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+  color: #bbb;
+  font-size: 1.1rem;
+}
+
+/* Tree View Styling */
+ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.tree-children {
+  padding-left: 28px;
+  border-left: 1px solid #333;
+  margin-left: 9px;
+}
+
+li {
+  margin-top: 8px;
+}
+
+.node-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  line-height: 1.5;
+}
+
+.icon {
+  width: 20px;
+  text-align: center;
+}
+
+.name {
+  font-weight: bold;
+  color: #fff;
+}
+
+.separator {
+  color: #666;
+}
+
+/* 關鍵樣式：讓 [類型] 和 (細節) 顏色分明 */
+.type-label {
+  color: #4ec9b0;
+  /* VS Code Class Color */
+}
+
+.type-label-dir {
+  color: #dcdcaa;
+  /* VS Code Folder Color */
+}
+
+.details {
+  color: #ce9178;
+  /* VS Code String Color */
+  font-size: 0.95em;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.search-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: white;
+  font-family: inherit;
+  font-weight: bold;
+  transition: 0.2s;
+
+  &:hover {
+    filter: brightness(1.1);
+  }
+}
+
+.btn-blue {
+  background-color: #0e639c;
+}
+
+.btn-green {
+  background-color: #2da042;
+}
+
+.btn-orange {
+  background-color: #d18616;
+}
+
+.input-dark {
+  flex-grow: 1;
+  background: #252526;
+  border: 1px solid #3c3c3c;
+  color: #fff;
+  padding: 8px;
+  border-radius: 4px;
+  font-family: inherit;
+}
+
+/* Console Output */
+.console-box {
+  background: #000;
+  border: 1px solid #333;
+  border-radius: 4px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.console-header {
+  background: #333;
+  padding: 5px 10px;
+  font-size: 0.8rem;
+  color: #fff;
+}
+
+.console-content {
+  padding: 15px;
+  margin: 0;
+  color: #cccccc;
+  white-space: pre-wrap;
+  overflow-y: auto;
+  height: 300px;
+  font-size: 0.9rem;
+}

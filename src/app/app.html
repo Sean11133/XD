@@ -1,0 +1,69 @@
+﻿<div class="container-dark">
+  <header>
+    <h1>☁️ 雲端檔案管理系統</h1>
+    <div class="badge">Composite + Visitor Pattern</div>
+  </header>
+
+  <div class="layout">
+    <div class="panel tree-panel">
+      <h3 class="panel-title">1. 客戶現有的目錄結構 (Visual Tree)</h3>
+      <ul class="tree-root">
+        <ng-container
+          *ngTemplateOutlet="nodeTemplate; context: { $implicit: root() }"
+        ></ng-container>
+      </ul>
+    </div>
+
+    <div class="panel action-panel">
+      <h3 class="panel-title">2. 系統功能操作 (Operations)</h3>
+
+      <div class="controls">
+        <button (click)="calculateTotalSize()" class="btn btn-blue">📊 計算總容量</button>
+        <button (click)="exportToXml()" class="btn btn-green">📑 匯出 XML</button>
+
+        <div class="search-group">
+          <input
+            [ngModel]="searchExt()"
+            (ngModelChange)="searchExt.set($event)"
+            placeholder=".docx"
+            class="input-dark"
+          />
+          <button (click)="searchFiles()" class="btn btn-orange">🔍 搜尋</button>
+        </div>
+      </div>
+
+      <div class="console-box">
+        <div class="console-header">Terminal Output</div>
+        <pre class="console-content">{{ consoleOutput() }}</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #nodeTemplate let-node>
+  <li>
+    <div class="node-row">
+      <span class="icon">{{ node.getIcon() }}</span>
+      <span class="name">{{ node.name }}</span>
+
+      @if (!isDirectory(node)) {
+        <span class="separator">—</span>
+        <span class="type-label">{{ node.getTypeLabel() }}</span>
+        <span class="details">{{ node.getDetails() }}</span>
+      } @else {
+        <span class="separator">—</span>
+        <span class="type-label-dir">[目錄]</span>
+      }
+    </div>
+
+    @if (isDirectory(node)) {
+      <ul class="tree-children">
+        @for (child of node.children; track child.name) {
+          <ng-container
+            *ngTemplateOutlet="nodeTemplate; context: { $implicit: child }"
+          ></ng-container>
+        }
+      </ul>
+    }
+  </li>
+</ng-template>
