@@ -10,22 +10,22 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 
-import { Directory } from '../../models/directory.model';
-import { FileSystemNode } from '../../models/file-system-node.model';
-import { TagType, TAG_COLORS } from '../../models/tag.model';
-import { FileSystemService } from '../../services/file-system.service';
-import { SearchSubjectService } from '../../observers/search-subject.service';
-import type { SearchEvent } from '../../observers/search-event.model';
-import { CommandHistory } from '../../commands/command-history';
-import { SortCommand } from '../../commands/sort.command';
-import { DeleteCommand } from '../../commands/delete.command';
-import { TagCommand } from '../../commands/tag.command';
-import type { TagAction } from '../../commands/tag.command';
-import { SortByNameStrategy } from '../../strategies/sort-by-name.strategy';
-import { SortBySizeStrategy } from '../../strategies/sort-by-size.strategy';
-import { SortByExtensionStrategy } from '../../strategies/sort-by-extension.strategy';
-import { SortByTagStrategy } from '../../strategies/sort-by-tag.strategy';
-import type { ISortStrategy } from '../../strategies/sort-strategy.interface';
+import { Directory } from '../../models/structural/directory.model';
+import { FileSystemNode } from '../../models/structural/file-system-node.model';
+import { TagType, TAG_COLORS } from '../../models/structural/tag.model';
+import { FileSystemService } from '../../services/structural/file-system.service';
+import { SearchSubjectService } from '../../services/behavioral/search-subject.service';
+import type { SearchEvent } from '../../models/behavioral/search-event.model';
+import { CommandHistory } from '../../services/behavioral/command-history.service';
+import { SortCommand } from '../../models/behavioral/sort.command';
+import { DeleteCommand } from '../../models/behavioral/delete.command';
+import { TagCommand } from '../../models/behavioral/tag.command';
+import type { TagAction } from '../../models/behavioral/tag.command';
+import { SortByNameStrategy } from '../../models/behavioral/sort-by-name.strategy';
+import { SortBySizeStrategy } from '../../models/behavioral/sort-by-size.strategy';
+import { SortByExtensionStrategy } from '../../models/behavioral/sort-by-extension.strategy';
+import { SortByTagStrategy } from '../../models/behavioral/sort-by-tag.strategy';
+import type { ISortStrategy } from '../../models/behavioral/sort-strategy.interface';
 
 /** 排序類型 */
 export type SortType = 'name' | 'size' | 'extension' | 'tag';

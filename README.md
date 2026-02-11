@@ -1,9 +1,11 @@
 # ☁️ 雲端檔案管理系統 — Design Patterns Demo
 
-> 以 **Angular 21** 打造的互動式範例專案，深入展示 **Composite Pattern**、**Visitor Pattern**、**Observer Pattern**、**Command Pattern** 與 **Strategy Pattern** 的實務應用。
+> 以 **Angular 21** 打造的**系統分析與設計（SA&D）教學暨實作展示平台**，透過「雲端檔案管理系統」真實業務情境，深入展示 **Composite Pattern**、**Visitor Pattern**、**Observer Pattern**、**Command Pattern** 與 **Strategy Pattern** 的實務應用。
 
 [![Angular](https://img.shields.io/badge/Angular-21-dd0031?logo=angular&logoColor=white)](https://angular.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Mermaid](https://img.shields.io/badge/Mermaid-11.12-ff3670?logo=mermaid&logoColor=white)](https://mermaid.js.org/)
+[![Vitest](https://img.shields.io/badge/Vitest-4.0-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -11,6 +13,7 @@
 ## 📖 目錄
 
 - [專案概述](#-專案概述)
+- [教學頁面導覽](#-教學頁面導覽)
 - [分層架構](#-分層架構)
 - [設計模式詳解](#-設計模式詳解)
   - [Composite Pattern（組合模式）](#composite-pattern組合模式)
@@ -23,19 +26,21 @@
 - [快速開始](#-快速開始)
 - [專案結構](#-專案結構)
 - [功能展示](#-功能展示)
+- [如何擴展](#-如何擴展)
+- [參考資源](#-參考資源)
 
 ---
 
 ## 🎯 專案概述
 
-本專案模擬一個雲端檔案管理系統，使用者可以：
+本專案以 **SA&D 設計流程**（URD → Use Case → Class Diagram → Collaboration → Sequence → Architecture → 實作）為主軸，模擬一個雲端檔案管理系統，使用者可以：
 
 - 🌲 瀏覽巢狀目錄結構（Composite Pattern）
 - 📊 計算所有檔案的總容量
 - 📑 將整棵目錄樹匯出為 XML 格式（Visitor Pattern）
 - 🔍 依副檔名搜尋檔案（Visitor + Observer Pattern）
 - 📡 搜尋時即時高亮匹配節點 + Console 顯示樹狀走訪進度（Observer Pattern）
-- 🔀 多維度排序 — 依名稱、大小、副檔名，支援升冪 / 降冪（Strategy Pattern）
+- 🔀 多維度排序 — 依名稱、大小、副檔名、標籤，支援升冪 / 降冪（Strategy Pattern）
 - 🗑️ 刪除檔案或資料夾（Command Pattern）
 - 🏷️ 標籤管理 — Urgent / Work / Personal，支援多標籤（Command Pattern）
 - ↩️ Undo / Redo — 所有操作皆可撤銷與重做（Command Pattern）
@@ -44,75 +49,82 @@
 
 ---
 
+## 🗺️ 教學頁面導覽
+
+本平台依 SA&D 設計流程劃分為 **7 個頁面**，每頁聚焦不同階段，並使用 **Mermaid** 互動式圖表（支援點擊放大、縮放、平移）呈現 UML 圖。
+
+| 頁面                    | 路由             | 圖表類型                  | 說明                                                                                              |
+| ----------------------- | ---------------- | ------------------------- | ------------------------------------------------------------------------------------------------- |
+| 🏠 **首頁**             | `/`              | —                         | Landing Page，SA&D 流程總覽、URD 需求摘要、設計模式對應表、導覽卡片                               |
+| 📋 **Use Case Diagram** | `/use-case`      | Mermaid `graph LR`        | 使用案例圖：11 個 UC、2 個 Actor、include / extend 關係                                           |
+| 📐 **Class Diagram**    | `/class-diagram` | Mermaid `classDiagram`    | 5 張可展開/收合的類別圖，對應 5 大設計模式                                                        |
+| 🤝 **Collaboration**    | `/collaboration` | Mermaid `graph LR`        | 2 張合作圖：搜尋流程（9 步驟）、排序流程（5 步驟），帶編號訊息傳遞                                |
+| 🔄 **Sequence**         | `/sequence`      | Mermaid `sequenceDiagram` | 2 張循序圖：搜尋 `.docx` 流程、排序 + 撤銷流程，含 loop / rect 色塊區分                           |
+| 🏗️ **Architecture**     | `/architecture`  | Mermaid `graph TB`        | 三層式系統架構圖：Client Layer → Application Layer → Backend（Future）                            |
+| 🎮 **Live Demo**        | `/demo`          | —                         | 整合所有設計模式的互動式雲端檔案管理系統（樹狀瀏覽、搜尋、排序、刪除、標記、Undo/Redo、匯出 XML） |
+
+> 所有 Mermaid 圖表皆使用 `MermaidDiagramComponent` 共享元件渲染，支援 **點擊放大 → 全螢幕 Modal → 滾輪縮放（25%–500%）→ 滑鼠拖曳平移 → 重置**。
+
+---
+
 ## 🧱 分層架構
 
 本專案採用清晰的**分層架構（Layered Architecture）**，將關注點分離至不同目錄，確保可維護性與可擴展性。
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                    View Layer (Component)                 │
-│           app.ts  ·  app.html  ·  app.scss               │
-│    UI 呈現 + 事件綁定 + Observer 訂閱 + Command 調用      │
-├──────────────────────────────────────────────────────────┤
-│                    Command Layer                         │
-│    commands/command.interface.ts    (ICommand)            │
-│    commands/command-history.ts      (Invoker)             │
-│    commands/sort.command.ts         (Concrete Command)    │
-│    commands/delete.command.ts       (Concrete Command)    │
-│    commands/tag.command.ts          (Concrete Command)    │
-│       Command Pattern：封裝操作 + Undo/Redo 歷史管理      │
-├──────────────────────────────────────────────────────────┤
-│                    Strategy Layer                         │
-│    strategies/sort-strategy.interface.ts  (ISortStrategy) │
-│    strategies/sort-by-name.strategy.ts                    │
-│    strategies/sort-by-size.strategy.ts                    │
-│    strategies/sort-by-extension.strategy.ts               │
-│       Strategy Pattern：排序演算法抽換                     │
-├──────────────────────────────────────────────────────────┤
-│                    Service Layer                         │
-│              services/file-system.service.ts              │
-│       封裝業務邏輯：建樹、計算容量、匯出、搜尋            │
-├──────────────────────────────────────────────────────────┤
-│                    Observer Layer                         │
-│    observers/search-event.model.ts    (Event Model)      │
-│    observers/search-subject.service.ts (Subject)          │
-│       Observer Pattern：管理搜尋事件流與通知機制          │
-├──────────────────────────────────────────────────────────┤
-│                    Visitor Layer                          │
-│    visitors/xml-export.visitor.ts                         │
-│    visitors/extension-search.visitor.ts                   │
-│       實作 Visitor Pattern 的具體操作邏輯                 │
-├──────────────────────────────────────────────────────────┤
-│                    Model Layer                           │
-│    models/file-system-node.model.ts  (Abstract)          │
-│    models/directory.model.ts         (Composite)         │
-│    models/word-file.model.ts         (Leaf)              │
-│    models/image-file.model.ts        (Leaf)              │
-│    models/text-file.model.ts         (Leaf)              │
-│    models/tag.model.ts               (TagType enum)      │
-│    models/visitor.interface.ts        (Interface)         │
-│       定義領域物件 + Composite Pattern 結構               │
-└──────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────┐
+│                     View Layer（pages/ + shared/）            │
+│  pages/home · use-case · class-diagram · collaboration       │
+│  pages/sequence · architecture · demo                        │
+│  shared/mermaid-diagram（Mermaid 圖表共享元件）              │
+│     UI 呈現 + 事件綁定 + Observer 訂閱 + Command 調用        │
+├───────────────────────────────────────────────────────────────┤
+│              Service Layer — services/（依 GoF 三大分類）     │
+│                                                              │
+│  🏗️ creational/（預留）                                      │
+│                                                              │
+│  🧱 structural/                                              │
+│     file-system.service.ts    — Composite 業務邏輯           │
+│       封裝建樹、計算容量、匯出 XML、搜尋等操作               │
+│                                                              │
+│  🎭 behavioral/                                              │
+│     command-history.service.ts — Command Invoker             │
+│       管理 Undo / Redo 雙堆疊（Angular Signals 驅動）        │
+│     search-subject.service.ts  — Observer Subject             │
+│       管理搜尋事件流（RxJS Subject → Observable）            │
+├───────────────────────────────────────────────────────────────┤
+│              Model Layer — models/（依 GoF 三大分類）         │
+│                                                              │
+│  🏗️ creational/（預留）                                      │
+│                                                              │
+│  🧱 structural/ — Composite Pattern                          │
+│     FileSystemNode (Abstract) · FileNode (Abstract Leaf)     │
+│     Directory (Composite) · WordFile · ImageFile · TextFile  │
+│     TagType (Enum) · TAG_COLORS                              │
+│                                                              │
+│  🎭 behavioral/ — Command + Strategy + Visitor + Observer    │
+│     ICommand · SortCommand · DeleteCommand · TagCommand      │
+│     ISortStrategy · SortByName / Size / Extension / Tag      │
+│     IVisitor · XmlExportVisitor · ExtensionSearchVisitor     │
+│     SearchEvent (Observer 事件資料)                           │
+└───────────────────────────────────────────────────────────────┘
 ```
 
-| 層級         | 目錄                               | 職責                                                        | 設計原則           |
-| ------------ | ---------------------------------- | ----------------------------------------------------------- | ------------------ |
-| **Model**    | `models/`                          | 定義領域物件（Composite Pattern 的節點階層 + Visitor 介面） | 單一職責、開放封閉 |
-| **Visitor**  | `visitors/`                        | 實作具體 Visitor 操作，與 Model 解耦                        | 開放封閉、單一職責 |
-| **Observer** | `observers/`                       | 管理搜尋事件流（Subject + Event），通知 UI 即時更新         | 觀察者、開放封閉   |
-| **Service**  | `services/`                        | 封裝業務邏輯，透過 Angular DI 注入至 Component              | 依賴反轉           |
-| **Strategy** | `strategies/`                      | 封裝排序演算法，可自由抽換不同排序策略                      | 開放封閉、單一職責 |
-| **Command**  | `commands/`                        | 封裝操作為物件，統一管理執行 / 撤銷 / 重做                  | 單一職責、開放封閉 |
-| **View**     | `app.ts` + `app.html` + `app.scss` | UI 呈現 + Observer 訂閱 + Command 調用                      | 關注點分離         |
+| 層級        | 目錄                 | 職責                                                                        | 設計原則           |
+| ----------- | -------------------- | --------------------------------------------------------------------------- | ------------------ |
+| **View**    | `pages/` + `shared/` | 7 個教學頁面 + Mermaid 共享元件，UI 呈現 + 事件綁定                         | 關注點分離         |
+| **Model**   | `models/`            | 依 GoF 三大分類（Creational / Structural / Behavioral）統一管理所有模型定義 | 單一職責、開放封閉 |
+| **Service** | `services/`          | 依 GoF 三大分類封裝 @Injectable 業務邏輯（DI 注入）                         | 依賴反轉、單一職責 |
 
 ### 分層優勢
 
-- ✅ **關注點分離**：Model / 業務邏輯 / Observer / Command / Strategy / UI 各司其職
+- ✅ **關注點分離**：Model（三大分類）/ Service（三大分類）/ View 各司其職
 - ✅ **可測試性**：Service、Command、Strategy 可獨立進行單元測試，不依賴 DOM
-- ✅ **可擴展性**：新增 Visitor、Command 或 Strategy 不影響其他層
-- ✅ **鬆耦合通知**：Observer Layer 讓 Visitor 與 UI 無直接依賴
+- ✅ **可擴展性**：新增 Visitor、Command 或 Strategy 只需在 `models/behavioral/` 擴充
+- ✅ **GoF 分類清晰**：models/ 與 services/ 皆依 Creational / Structural / Behavioral 組織
 - ✅ **操作可逆**：Command Layer 讓所有操作都可以 Undo / Redo
 - ✅ **Angular 最佳實踐**：使用 `inject()` + `providedIn: 'root'` + Signals 管理依賴與狀態
+- ✅ **Lazy Loading**：所有頁面元件皆透過 `loadComponent()` 按需載入，優化初始載入效能
 
 ---
 
@@ -264,13 +276,13 @@ class WordFile extends FileNode {
 | ----------------------- | ------------------------ | ---------------------------------------------------------------- |
 | **Event（事件資料）**   | `SearchEvent`            | 定義事件類型：`visiting` / `matched` / `complete` + 攜帶節點資訊 |
 | **Subject（被觀察者）** | `SearchSubjectService`   | 持有 RxJS `Subject`，提供 `notify()` 與 `events$` Observable     |
-| **Observer（觀察者）**  | `App` Component          | 訂閱 `events$`，收到通知時更新 TreeView 高亮 & Console 進度      |
+| **Observer（觀察者）**  | `Demo` Component         | 訂閱 `events$`，收到通知時更新 TreeView 高亮 & Console 進度      |
 | **事件發送者**          | `ExtensionSearchVisitor` | 走訪節點時呼叫 `subject.notify()` 發出即時事件                   |
 
 #### 核心程式碼
 
 ```typescript
-// Event Model — 定義搜尋過程中的事件類型
+// Event Model — 定義搜尋過程中的事件類型（models/search-event.model.ts）
 interface SearchEvent {
   type: 'visiting' | 'matched' | 'complete';
   node?: FileSystemNode;
@@ -305,7 +317,7 @@ class ExtensionSearchVisitor implements IVisitor {
 }
 
 // Observer — Component 訂閱事件流
-class App implements OnInit, OnDestroy {
+class Demo implements OnInit, OnDestroy {
   private subscription?: Subscription;
 
   ngOnInit() {
@@ -356,7 +368,7 @@ class App implements OnInit, OnDestroy {
     │
     ▼
 ┌──────────────────────────────────┐
-│  App Component（Client）         │  ← 根據使用者動作建立 Command 物件
+│  Demo Component（Client）        │  ← 根據使用者動作建立 Command 物件
 │  建立 Concrete Command           │
 └──────────────┬───────────────────┘
                │ executeCommand(cmd)
@@ -389,7 +401,7 @@ class App implements OnInit, OnDestroy {
 | **Concrete Command**   | `DeleteCommand`               | 封裝刪除操作，記錄被刪節點的 parent + index                             |
 | **Concrete Command**   | `TagCommand`                  | 封裝標籤操作（add/remove），undo 時反向操作                             |
 | **Invoker（調用者）**  | `CommandHistory`              | 管理 undoStack / redoStack，提供 `executeCommand()`, `undo()`, `redo()` |
-| **Client（客戶端）**   | `App` Component               | 根據使用者操作建立 Command 物件，交給 Invoker 執行                      |
+| **Client（客戶端）**   | `Demo` Component              | 根據使用者操作建立 Command 物件，交給 Invoker 執行                      |
 | **Receiver（接收者）** | `Directory`, `FileSystemNode` | 實際被操作的領域物件                                                    |
 
 #### 核心程式碼
@@ -456,7 +468,7 @@ class DeleteCommand implements ICommand {
 }
 
 // Client — Component 建立並執行命令
-class App {
+class Demo {
   private commandHistory = inject(CommandHistory);
 
   deleteSelected(): void {
@@ -506,7 +518,7 @@ Redo   → [Sort, Delete]         [Tag]
 
 #### 問題場景
 
-檔案排序需要支援**多種維度**（名稱、大小、副檔名）以及**升冪 / 降冪**。若在 Component 中用 `if-else` 或 `switch` 判斷排序方式，將導致**條件邏輯膨脹**且違反**開放封閉原則**。
+檔案排序需要支援**多種維度**（名稱、大小、副檔名、標籤）以及**升冪 / 降冪**。若在 Component 中用 `if-else` 或 `switch` 判斷排序方式，將導致**條件邏輯膨脹**且違反**開放封閉原則**。
 
 #### 解決方案
 
@@ -515,7 +527,8 @@ Redo   → [Sort, Delete]         [Tag]
     │
     ├── 依名稱 → SortByNameStrategy
     ├── 依大小 → SortBySizeStrategy
-    └── 依類型 → SortByExtensionStrategy
+    ├── 依類型 → SortByExtensionStrategy
+    └── 依標籤 → SortByTagStrategy
                     │
                     ▼
             ┌──────────────────┐
@@ -540,6 +553,7 @@ Redo   → [Sort, Delete]         [Tag]
 | **Concrete Strategy** | `SortByNameStrategy`      | 依名稱字典序排序，支援升冪 / 降冪               |
 | **Concrete Strategy** | `SortBySizeStrategy`      | 依檔案大小（KB）排序，支援升冪 / 降冪           |
 | **Concrete Strategy** | `SortByExtensionStrategy` | 依副檔名排序（目錄排最前），支援升冪 / 降冪     |
+| **Concrete Strategy** | `SortByTagStrategy`       | 依標籤數量排序，支援升冪 / 降冪                 |
 | **Context（使用者）** | `SortCommand`             | 持有 ISortStrategy，在 execute() 中委派排序邏輯 |
 
 #### 核心程式碼
@@ -595,11 +609,12 @@ class SortCommand implements ICommand {
 }
 
 // Client — Component 建立策略並注入 Command
-sortBy(type: 'name' | 'size' | 'extension'): void {
+sortBy(type: 'name' | 'size' | 'extension' | 'tag'): void {
   const strategies = {
     name: new SortByNameStrategy(this.sortAscending()),
     size: new SortBySizeStrategy(this.sortAscending()),
     extension: new SortByExtensionStrategy(this.sortAscending()),
+    tag: new SortByTagStrategy(this.sortAscending()),
   };
   const cmd = new SortCommand(this.root, strategies[type]);
   this.commandHistory.executeCommand(cmd);
@@ -610,7 +625,7 @@ sortBy(type: 'name' | 'size' | 'extension'): void {
 
 ```
 ┌─────────────┐    建立    ┌──────────────┐    委派    ┌───────────────────┐
-│ App (Client)│ ─────────▶ │ SortCommand  │ ─────────▶ │ ISortStrategy     │
+│ Demo(Client)│ ─────────▶ │ SortCommand  │ ─────────▶ │ ISortStrategy     │
 │ sortBy()    │            │ (Command)    │            │ .sort(children)   │
 └─────────────┘            └──────┬───────┘            └───────────────────┘
                                   │
@@ -636,114 +651,6 @@ sortBy(type: 'name' | 'size' | 'extension'): void {
 ---
 
 ## 📐 類別架構圖
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     FileSystemNode (Abstract)                   │
-│  ───────────────────────────────────────────────────────────    │
-│  + name: string                                                 │
-│  + highlightState: HighlightState    ← Observer Pattern UI 狀態 │
-│  + tags: Set<TagType>                ← Command Pattern 標籤     │
-│  + accept(visitor: IVisitor): void                              │
-│  + getSizeKB(): number                                          │
-│  + getIcon(): string                                            │
-│  + getTypeLabel(): string                                       │
-│  + getDetails(): string                                         │
-│  + getTagsArray(): TagType[]                                    │
-└──────────┬──────────────────────────────────┬───────────────────┘
-           │                                  │
-           ▼                                  ▼
-┌──────────────────────┐          ┌───────────────────────────────┐
-│  FileNode (Abstract) │          │   Directory (Composite)       │
-│  + sizeKB: number    │          │  + children: FSNode[]         │
-│  + getSizeKB()       │          │  + add(node): void            │
-└──────┬───────────────┘          │  + remove(node): number       │
-       │                          │  + insertAt(node, idx): void  │
-       ├──────────────────┐       │  + getSizeKB() → Σ child      │
-       │                  │       └───────────────────────────────┘
-       ▼                  ▼
-┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│   WordFile   │ │  ImageFile   │ │   TextFile   │
-│  + pages     │ │  + width     │ │  + encoding  │
-│              │ │  + height    │ │              │
-└──────────────┘ └──────────────┘ └──────────────┘
-
-┌─────────────────────────────────────────┐
-│          IVisitor (Interface)           │
-│  + visitDirectory(dir)                  │
-│  + visitWordFile(file)                  │
-│  + visitImageFile(file)                 │
-│  + visitTextFile(file)                  │
-└──────────┬──────────────┬───────────────┘
-           │              │
-           ▼              ▼
-┌──────────────────┐ ┌───────────────────────────────────┐
-│ XmlExportVisitor │ │ ExtensionSearchVisitor            │
-│  + getResult()   │ │  + getResults()                   │
-└──────────────────┘ │  - subject?: SearchSubjectService │ ── notify() ──┐
-                     └───────────────────────────────────┘               │
-                                                                         ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│                     Observer Pattern                                     │
-├──────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│  ┌─────────────────────────────┐    ┌──────────────────────────────────┐ │
-│  │   SearchEvent (Model)       │    │  SearchSubjectService (Subject)  │ │
-│  │  + type: EventType          │    │  - searchEvent$: Subject<>       │ │
-│  │  + node?: FileSystemNode    │◄───│  + events$: Observable<>         │ │
-│  │  + message: string          │    │  + notify(event): void           │ │
-│  └─────────────────────────────┘    └───────────────┬──────────────────┘ │
-│                                                     │ subscribe()        │
-│                                                     ▼                    │
-│                                        ┌────────────────────────────┐    │
-│                                        │  App Component (Observer)  │    │
-│                                        │  + onSearchEvent(event)    │    │
-│                                        │    → 更新 TreeView 高亮     │    │
-│                                        │    → 累加 Console 進度      │    │
-│                                        └────────────────────────────┘    │
-└──────────────────────────────────────────────────────────────────────────┘
-
-┌──────────────────────────────────────────────────────────────────────────┐
-│                     Command Pattern                                      │
-├──────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│  ┌──────────────────────────┐     ┌─────────────────────────────────┐   │
-│  │  ICommand (Interface)    │     │  CommandHistory (Invoker)       │   │
-│  │  + execute(): void       │◄────│  - undoStack: Signal<ICommand[]>│   │
-│  │  + undo(): void          │     │  - redoStack: Signal<ICommand[]>│   │
-│  │  + description: string   │     │  + canUndo: computed            │   │
-│  └─────────┬────────────────┘     │  + canRedo: computed            │   │
-│            │ implements           │  + executeCommand(cmd)          │   │
-│     ┌──────┼──────────┐           │  + undo() / redo()             │   │
-│     │      │          │           └─────────────────────────────────┘   │
-│     ▼      ▼          ▼                                                  │
-│  ┌──────┐┌──────┐┌─────────┐                                            │
-│  │Sort  ││Delete││Tag      │                                            │
-│  │Cmd   ││Cmd   ││Cmd      │                                            │
-│  │──────││──────││─────────│                                            │
-│  │+strat││+node ││+node    │                                            │
-│  │+prev ││+paren││+tag     │                                            │
-│  │Orders││+index││+action  │                                            │
-│  └──┬───┘└──────┘└─────────┘                                            │
-│     │ uses                                                               │
-│     ▼                                                                    │
-│  ┌──────────────────────────────────────────────────────────────────┐    │
-│  │                    Strategy Pattern                              │    │
-│  ├──────────────────────────────────────────────────────────────────┤    │
-│  │  ┌────────────────────┐                                          │    │
-│  │  │ ISortStrategy      │                                          │    │
-│  │  │ + name: string     │                                          │    │
-│  │  │ + sort(nodes)      │                                          │    │
-│  │  └────────┬───────────┘                                          │    │
-│  │           │ implements                                           │    │
-│  │     ┌─────┼─────────────┐                                        │    │
-│  │     ▼     ▼             ▼                                        │    │
-│  │  ┌──────┐┌──────┐┌───────────┐                                   │    │
-│  │  │ByName││BySize││ByExtension│                                   │    │
-│  │  └──────┘└──────┘└───────────┘                                   │    │
-│  └──────────────────────────────────────────────────────────────────┘    │
-└──────────────────────────────────────────────────────────────────────────┘
-```
 
 ### Composite + Visitor Pattern
 
@@ -859,7 +766,7 @@ classDiagram
         +notify(event: SearchEvent) void
     }
 
-    class AppComponent_Observer {
+    class DemoComponent_Observer {
         -subscription: Subscription
         +ngOnInit() void
         +ngOnDestroy() void
@@ -873,8 +780,8 @@ classDiagram
 
     SearchSubjectService --> SearchEvent : 發送
     ExtensionSearchVisitor_Sender ..> SearchSubjectService : notify()
-    AppComponent_Observer ..> SearchSubjectService : subscribe / unsubscribe
-    SearchSubjectService --> AppComponent_Observer : events$
+    DemoComponent_Observer ..> SearchSubjectService : subscribe / unsubscribe
+    SearchSubjectService --> DemoComponent_Observer : events$
 ```
 
 ### Command + Strategy Pattern
@@ -974,39 +881,33 @@ classDiagram
 
 ```mermaid
 flowchart TB
-    subgraph View["🖥️ View Layer"]
-        App["App Component<br/>(Client + Observer)"]
+    subgraph View["🖥️ View Layer — pages/ + shared/"]
+        App["Demo Component<br/>(Client + Observer)"]
     end
 
-    subgraph Command["🎮 Command Layer"]
-        CH["CommandHistory<br/>(Invoker)"]
-        SC["SortCommand"]
-        DC["DeleteCommand"]
-        TC["TagCommand"]
+    subgraph Service["⚙️ Service Layer — services/"]
+        direction TB
+        FS["FileSystemService<br/>structural/ — Composite 業務邏輯"]
+        CH["CommandHistory<br/>behavioral/ — Invoker"]
+        SSS["SearchSubjectService<br/>behavioral/ — Observer Subject"]
     end
 
-    subgraph Strategy["🔀 Strategy Layer"]
-        ISS["ISortStrategy"]
-        BN["ByName"]
-        BS["BySize"]
-        BE["ByExtension"]
-        BT["ByTag"]
-    end
-
-    subgraph Observer["📡 Observer Layer"]
-        SSS["SearchSubjectService<br/>(Subject)"]
-        SE["SearchEvent"]
-    end
-
-    subgraph Visitor["🔄 Visitor Layer"]
-        XV["XmlExportVisitor"]
-        ESV["ExtensionSearchVisitor"]
-    end
-
-    subgraph Model["🏗️ Model Layer"]
+    subgraph Model_S["🧱 models/structural/"]
         FSN["FileSystemNode"]
         DIR["Directory"]
         LEAF["WordFile / ImageFile / TextFile"]
+    end
+
+    subgraph Model_B["🎭 models/behavioral/"]
+        direction TB
+        SC["SortCommand"]
+        DC["DeleteCommand"]
+        TC["TagCommand"]
+        ISS["ISortStrategy"]
+        BN["ByName"] & BS["BySize"] & BE["ByExtension"] & BT["ByTag"]
+        XV["XmlExportVisitor"]
+        ESV["ExtensionSearchVisitor"]
+        SE["SearchEvent"]
     end
 
     App -->|executeCommand| CH
@@ -1018,7 +919,8 @@ flowchart TB
     SSS -->|events$| App
     ESV -->|notify| SSS
 
-    App -->|triggers| XV & ESV
+    App -->|triggers| FS
+    FS -->|uses| XV & ESV
     XV & ESV -->|accept / visit| FSN
     FSN --- DIR & LEAF
 
@@ -1026,29 +928,34 @@ flowchart TB
     TC -->|modifies| FSN
 
     style View fill:#1e3a5f,stroke:#3794d4,color:#fff
-    style Command fill:#3a1e1e,stroke:#d44,color:#fff
-    style Strategy fill:#1e3a2e,stroke:#2da042,color:#fff
-    style Observer fill:#3a2e1e,stroke:#d18616,color:#fff
-    style Visitor fill:#2e1e3a,stroke:#9b59b6,color:#fff
-    style Model fill:#1e1e1e,stroke:#666,color:#fff
+    style Service fill:#2e1e3a,stroke:#9b59b6,color:#fff
+    style Model_S fill:#1e3a2e,stroke:#2da042,color:#fff
+    style Model_B fill:#3a2e1e,stroke:#d18616,color:#fff
 ```
 
 ---
 
 ## 🛠 技術棧
 
-| 技術                | 版本 | 用途                                  |
-| ------------------- | ---- | ------------------------------------- |
-| **Angular**         | 21.x | 前端框架（Standalone Components）     |
-| **TypeScript**      | 5.9  | 強型別語言                            |
-| **RxJS**            | 7.8  | 響應式程式設計                        |
-| **Angular Signals** | —    | 狀態管理（取代傳統 Zone.js 變更偵測） |
+| 技術                | 版本   | 用途                                                                       |
+| ------------------- | ------ | -------------------------------------------------------------------------- |
+| **Angular**         | 21.1.x | 前端框架（Standalone Components）                                          |
+| **TypeScript**      | 5.9    | 強型別語言                                                                 |
+| **RxJS**            | 7.8    | 響應式程式設計（Observer Pattern）                                         |
+| **Angular Signals** | —      | 狀態管理（取代傳統 Zone.js 變更偵測）                                      |
+| **Mermaid**         | 11.12  | UML 圖表渲染（Use Case / Class / Sequence / Collaboration / Architecture） |
+| **Vitest**          | 4.0    | 單元測試框架                                                               |
+| **SCSS**            | —      | 樣式預處理（GitHub Dark Theme）                                            |
 
 ### Angular 現代特性使用
 
 - ✅ `ChangeDetectionStrategy.OnPush` + Signals
 - ✅ 新版控制流語法 `@if` / `@for`
 - ✅ Standalone Component（無需 NgModule）
+- ✅ `input.required<T>()` 強制型別輸入
+- ✅ `afterNextRender()` SSR 安全的 DOM 操作
+- ✅ Lazy Loading Routes（`loadComponent()`）
+- ✅ `inject()` 函式式依賴注入
 
 ---
 
@@ -1073,13 +980,13 @@ npm install
 npm start
 ```
 
-應用程式將在 `http://localhost:4200/` 啟動。
+應用程式將在 `http://localhost:4200/XD` 啟動。
 
 ### 其他指令
 
 ```bash
-npm run build    # 建置生產版本
-npm run test     # 執行單元測試
+npm run build    # 建置生產版本（輸出至 docs/）
+npm run test     # 執行單元測試（Vitest）
 npm run watch    # 開發模式 Watch Build
 ```
 
@@ -1091,56 +998,70 @@ npm run watch    # 開發模式 Watch Build
 design-pattern/
 ├── src/
 │   ├── app/
-│   │   ├── models/                              # 🏗 Model 層
-│   │   │   ├── visitor.interface.ts              #   IVisitor 介面定義
-│   │   │   ├── file-system-node.model.ts         #   FileSystemNode + FileNode 抽象基類
-│   │   │   ├── word-file.model.ts                #   WordFile (Leaf)
-│   │   │   ├── image-file.model.ts               #   ImageFile (Leaf)
-│   │   │   ├── text-file.model.ts                #   TextFile (Leaf)
-│   │   │   ├── directory.model.ts                #   Directory (Composite)
-│   │   │   ├── tag.model.ts                      #   TagType enum + TAG_COLORS
-│   │   │   └── index.ts                          #   Barrel export
+│   │   ├── models/                              # 🏗 Model 層（依 GoF 三大分類）
+│   │   │   ├── creational/                       #   🏗️ 建立型模式（預留）
+│   │   │   │   └── index.ts                      #     Barrel export
+│   │   │   ├── structural/                       #   🧱 結構型模式 — Composite Pattern
+│   │   │   │   ├── file-system-node.model.ts     #     FileSystemNode + FileNode 抽象基類
+│   │   │   │   ├── directory.model.ts            #     Directory (Composite)
+│   │   │   │   ├── word-file.model.ts            #     WordFile (Leaf)
+│   │   │   │   ├── image-file.model.ts           #     ImageFile (Leaf)
+│   │   │   │   ├── text-file.model.ts            #     TextFile (Leaf)
+│   │   │   │   ├── tag.model.ts                  #     TagType enum + TAG_COLORS
+│   │   │   │   └── index.ts                      #     Barrel export
+│   │   │   ├── behavioral/                       #   🎭 行為型模式
+│   │   │   │   ├── visitor.interface.ts           #     IVisitor 介面（Visitor Pattern）
+│   │   │   │   ├── xml-export.visitor.ts          #     XML 匯出 Visitor
+│   │   │   │   ├── extension-search.visitor.ts    #     副檔名搜尋 Visitor（+ Observer）
+│   │   │   │   ├── command.interface.ts           #     ICommand 介面（Command Pattern）
+│   │   │   │   ├── delete.command.ts              #     DeleteCommand
+│   │   │   │   ├── sort.command.ts                #     SortCommand
+│   │   │   │   ├── tag.command.ts                 #     TagCommand
+│   │   │   │   ├── sort-strategy.interface.ts     #     ISortStrategy 介面（Strategy Pattern）
+│   │   │   │   ├── sort-by-name.strategy.ts       #     依名稱排序
+│   │   │   │   ├── sort-by-size.strategy.ts       #     依大小排序
+│   │   │   │   ├── sort-by-extension.strategy.ts  #     依副檔名排序
+│   │   │   │   ├── sort-by-tag.strategy.ts        #     依標籤排序
+│   │   │   │   ├── search-event.model.ts          #     SearchEvent（Observer Pattern）
+│   │   │   │   └── index.ts                      #     Barrel export
+│   │   │   └── index.ts                          #   主 Barrel export（三大分類彙整）
 │   │   │
-│   │   ├── visitors/                             # 🔄 Visitor 層
-│   │   │   ├── xml-export.visitor.ts             #   XML 匯出 Visitor
-│   │   │   ├── extension-search.visitor.ts       #   副檔名搜尋 Visitor（+ Observer 事件發送）
-│   │   │   └── index.ts                          #   Barrel export
+│   │   ├── services/                             # ⚙️ Service 層（依 GoF 三大分類）
+│   │   │   ├── creational/                       #   🏗️ 建立型模式（預留）
+│   │   │   │   └── index.ts                      #     Barrel export
+│   │   │   ├── structural/                       #   🧱 結構型模式
+│   │   │   │   ├── file-system.service.ts        #     Composite — 檔案樹建構與業務邏輯
+│   │   │   │   └── index.ts                      #     Barrel export
+│   │   │   ├── behavioral/                       #   🎭 行為型模式
+│   │   │   │   ├── command-history.service.ts     #     Command — Undo/Redo 歷史管理
+│   │   │   │   ├── search-subject.service.ts      #     Observer — 搜尋事件 Subject
+│   │   │   │   └── index.ts                      #     Barrel export
+│   │   │   └── index.ts                          #   主 Barrel export（三大分類彙整）
 │   │   │
-│   │   ├── observers/                            # 📡 Observer 層
-│   │   │   ├── search-event.model.ts             #   SearchEvent 事件資料定義
-│   │   │   ├── search-subject.service.ts          #   SearchSubjectService（Subject）
-│   │   │   └── index.ts                          #   Barrel export
+│   │   ├── pages/                                # 📄 教學頁面（Lazy Loading）
+│   │   │   ├── home/                             #   🏠 首頁 — SA&D 流程總覽 + 導覽
+│   │   │   ├── use-case/                         #   📋 Use Case Diagram（Mermaid）
+│   │   │   ├── class-diagram/                    #   📐 Class Diagram × 5（Mermaid）
+│   │   │   ├── collaboration/                    #   🤝 Collaboration Diagram × 2（Mermaid）
+│   │   │   ├── sequence/                         #   🔄 Sequence Diagram × 2（Mermaid）
+│   │   │   ├── architecture/                     #   🏗️ Architecture Diagram（Mermaid）
+│   │   │   └── demo/                             #   🎮 Live Demo — 整合 5 大設計模式
 │   │   │
-│   │   ├── commands/                             # 🎮 Command 層
-│   │   │   ├── command.interface.ts              #   ICommand 介面定義
-│   │   │   ├── command-history.ts                #   CommandHistory（Invoker）
-│   │   │   ├── sort.command.ts                   #   SortCommand（排序命令）
-│   │   │   ├── delete.command.ts                 #   DeleteCommand（刪除命令）
-│   │   │   ├── tag.command.ts                    #   TagCommand（標籤命令）
-│   │   │   └── index.ts                          #   Barrel export
+│   │   ├── shared/                               # 🔧 共享元件
+│   │   │   └── mermaid-diagram/                  #   Mermaid 圖表渲染元件（點擊放大 + 縮放 + 平移）
 │   │   │
-│   │   ├── strategies/                           # 🔀 Strategy 層
-│   │   │   ├── sort-strategy.interface.ts        #   ISortStrategy 介面定義
-│   │   │   ├── sort-by-name.strategy.ts          #   依名稱排序策略
-│   │   │   ├── sort-by-size.strategy.ts          #   依大小排序策略
-│   │   │   ├── sort-by-extension.strategy.ts     #   依副檔名排序策略
-│   │   │   └── index.ts                          #   Barrel export
-│   │   │
-│   │   ├── services/                             # ⚙️ Service 層
-│   │   │   ├── file-system.service.ts            #   業務邏輯封裝
-│   │   │   └── index.ts                          #   Barrel export
-│   │   │
-│   │   ├── app.ts                                # 👁 View 層 — Component
-│   │   ├── app.html                              # 📄 Template
-│   │   ├── app.scss                              # 🎨 Styles
+│   │   ├── app.ts                                # 🧭 Root Component（導覽列 + Router Outlet）
+│   │   ├── app.html                              # 📄 Root Template
+│   │   ├── app.scss                              # 🎨 Root Styles
 │   │   ├── app.config.ts                         # Angular 應用設定
-│   │   ├── app.routes.ts                         # 路由設定
+│   │   ├── app.routes.ts                         # 路由設定（7 頁 Lazy Loading）
 │   │   └── app.spec.ts                           # 單元測試
 │   │
 │   ├── main.ts                                   # 應用進入點
 │   ├── index.html                                # 主頁 HTML
-│   └── styles.scss                               # 全域樣式
+│   └── styles.scss                               # 全域樣式（Dark Theme）
 │
+├── docs/                                         # 建置輸出（GitHub Pages）
 ├── angular.json                                  # Angular CLI 設定
 ├── package.json                                  # 依賴管理
 ├── tsconfig.json                                 # TypeScript 設定
@@ -1151,18 +1072,19 @@ design-pattern/
 
 ## 🎮 功能展示
 
-| 功能                     | 使用的模式         | 說明                                                     |
-| ------------------------ | ------------------ | -------------------------------------------------------- |
-| 📊 **計算總容量**        | Composite          | 遞迴加總所有子節點的 `getSizeKB()`                       |
-| 📑 **匯出 XML**          | Visitor            | `XmlExportVisitor` 遍歷樹並生成 XML                      |
-| 🔍 **副檔名搜尋**        | Visitor + Observer | `ExtensionSearchVisitor` 走訪時透過 Subject 即時發送事件 |
-| 🌲 **目錄樹顯示**        | Composite          | Angular Template 遞迴渲染巢狀結構                        |
-| ✨ **搜尋即時高亮**      | Observer           | 節點 `highlightState` 隨事件更新，TreeView 即時反映      |
-| 📡 **Console 走訪進度**  | Observer           | 訂閱事件流，逐行顯示 Visitor 的樹狀走訪軌跡              |
-| 🔀 **多維度排序**        | Command + Strategy | 三種 Strategy（名稱 / 大小 / 副檔名）注入 SortCommand    |
-| 🗑️ **刪除檔案 / 資料夾** | Command            | `DeleteCommand` 保存位置，undo 時插回原處                |
-| 🏷️ **標籤管理**          | Command            | `TagCommand` 支援 add/remove，三種標籤可多重貼           |
-| ↩️ **Undo / Redo**       | Command            | `CommandHistory` 管理雙堆疊，所有操作皆可撤銷重做        |
+| 功能                     | 使用的模式         | 說明                                                         |
+| ------------------------ | ------------------ | ------------------------------------------------------------ |
+| 📊 **計算總容量**        | Composite          | 遞迴加總所有子節點的 `getSizeKB()`                           |
+| 📑 **匯出 XML**          | Visitor            | `XmlExportVisitor` 遍歷樹並生成 XML                          |
+| 🔍 **副檔名搜尋**        | Visitor + Observer | `ExtensionSearchVisitor` 走訪時透過 Subject 即時發送事件     |
+| 🌲 **目錄樹顯示**        | Composite          | Angular Template 遞迴渲染巢狀結構                            |
+| ✨ **搜尋即時高亮**      | Observer           | 節點 `highlightState` 隨事件更新，TreeView 即時反映          |
+| 📡 **Console 走訪進度**  | Observer           | 訂閱事件流，逐行顯示 Visitor 的樹狀走訪軌跡                  |
+| 🔀 **多維度排序**        | Command + Strategy | 四種 Strategy（名稱 / 大小 / 副檔名 / 標籤）注入 SortCommand |
+| 🗑️ **刪除檔案 / 資料夾** | Command            | `DeleteCommand` 保存位置，undo 時插回原處                    |
+| 🏷️ **標籤管理**          | Command            | `TagCommand` 支援 add/remove，三種標籤可多重貼               |
+| ↩️ **Undo / Redo**       | Command            | `CommandHistory` 管理雙堆疊，所有操作皆可撤銷重做            |
+| 📐 **UML 圖表**          | Mermaid            | 5 種 UML 圖表，支援點擊放大、縮放（25%–500%）、平移          |
 
 ---
 
@@ -1171,7 +1093,7 @@ design-pattern/
 ### 新增檔案類型（不違反 OCP）
 
 ```typescript
-// 1. 在 models/ 新增 pdf-file.model.ts
+// 1. 在 models/structural/ 新增 pdf-file.model.ts
 export class PdfFile extends FileNode {
   constructor(
     name: string,
@@ -1194,21 +1116,35 @@ export class PdfFile extends FileNode {
   }
 }
 
-// 2. 在 models/visitor.interface.ts 新增 visitPdfFile() 方法
-// 3. 在 visitors/ 各 Visitor 實作中新增對應邏輯
+// 2. 在 models/behavioral/visitor.interface.ts 新增 visitPdfFile() 方法
+// 3. 在 models/behavioral/ 各 Visitor 實作中新增對應邏輯
 // 4. 在 models/index.ts 匯出新類別
 ```
 
 ### 新增操作（不修改節點類別）
 
 ```typescript
-// 在 visitors/ 新建 size-report.visitor.ts 即可
+// 在 models/behavioral/ 新建 size-report.visitor.ts 即可
 export class SizeReportVisitor implements IVisitor {
   // 實作各 visit 方法，產生大小報告
 }
 
-// 在 services/file-system.service.ts 新增呼叫方法
-// Component 層只需在 app.ts 新增按鈕綁定
+// 在 services/structural/file-system.service.ts 新增呼叫方法
+// Component 層只需在 demo.ts 新增按鈕綁定
+```
+
+### 新增排序方式（不修改既有程式碼）
+
+```typescript
+// 在 models/behavioral/ 新建 sort-by-date.strategy.ts
+export class SortByDateStrategy implements ISortStrategy {
+  readonly name = '依日期排序';
+  sort(nodes: FileSystemNode[]): FileSystemNode[] {
+    // 實作排序邏輯
+  }
+}
+
+// 在 Demo Component 的 sortBy() 方法中新增選項即可
 ```
 
 ---
@@ -1222,6 +1158,7 @@ export class SizeReportVisitor implements IVisitor {
 - [Refactoring Guru — Strategy Pattern](https://refactoring.guru/design-patterns/strategy)
 - [Angular Official Documentation](https://angular.dev/)
 - [RxJS — Subject](https://rxjs.dev/guide/subject)
+- [Mermaid Official Documentation](https://mermaid.js.org/)
 
 ---
 

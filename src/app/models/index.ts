@@ -1,11 +1,12 @@
 // ==========================================
-// Models — Barrel Export
+// Models — Barrel Export（依 GoF 三大分類）
 // ==========================================
 
-export type { IVisitor } from './visitor.interface';
-export { FileSystemNode, FileNode } from './file-system-node.model';
-export { WordFile } from './word-file.model';
-export { ImageFile } from './image-file.model';
-export { TextFile } from './text-file.model';
-export { Directory } from './directory.model';
-export { TagType, TAG_COLORS } from './tag.model';
+// 建立型模式（Creational Patterns）
+export * from './creational';
+
+// 結構型模式（Structural Patterns）
+export * from './structural';
+
+// 行為型模式（Behavioral Patterns）
+export * from './behavioral';
