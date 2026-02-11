@@ -47,15 +47,18 @@
       <div class="layer-card app">
         <h4>⚙️ Application Layer</h4>
         <p>
-          Angular SPA 的核心層。採用<strong>元件化架構</strong>，業務邏輯封裝於 Service 中， 透過 DI
-          注入。Models 定義資料結構（Composite Pattern），Commands / Strategies / Visitors /
-          Observers 封裝各種設計模式的實作。
+          Angular SPA 的核心層。採用 <strong>GoF 三大分類</strong>（Creational / Structural /
+          Behavioral） 統一組織 <code>models/</code> 與 <code>services/</code>： 結構型放置
+          Composite 節點模型與檔案系統服務； 行為型放置 Command、Strategy、Visitor、Observer
+          的介面與實作，以及 CommandHistory、SearchSubject 服務。 所有頁面元件透過 Lazy Loading
+          按需載入。
         </p>
         <div class="tech-tags">
           <span class="tech-tag">Angular 21</span>
           <span class="tech-tag">Signals</span>
           <span class="tech-tag">RxJS</span>
-          <span class="tech-tag">Router</span>
+          <span class="tech-tag">GoF 三大分類</span>
+          <span class="tech-tag">Lazy Loading</span>
         </div>
       </div>
 
@@ -82,46 +85,61 @@
       <table class="arch-table">
         <thead>
           <tr>
-            <th>架構層</th>
+            <th>所屬資料夾</th>
             <th>設計模式</th>
-            <th>實作位置</th>
+            <th>實作類別 / 介面</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>Models</td>
+            <td>models/structural/</td>
             <td><span class="pattern-badge">Composite</span></td>
-            <td>FileSystemNode / Directory / FileNode</td>
+            <td>FileSystemNode / Directory / WordFile / ImageFile / TextFile</td>
           </tr>
           <tr>
-            <td>Models</td>
+            <td>models/behavioral/</td>
             <td><span class="pattern-badge">Visitor</span></td>
-            <td>IVisitor / accept() — Double Dispatch</td>
+            <td>IVisitor（介面）/ accept() — Double Dispatch</td>
           </tr>
           <tr>
-            <td>Visitors</td>
+            <td>models/behavioral/</td>
             <td><span class="pattern-badge">Visitor</span></td>
             <td>XmlExportVisitor / ExtensionSearchVisitor</td>
           </tr>
           <tr>
-            <td>Commands</td>
+            <td>models/behavioral/</td>
             <td><span class="pattern-badge">Command</span></td>
-            <td>ICommand / CommandHistory / SortCommand ...</td>
+            <td>ICommand / SortCommand / DeleteCommand / TagCommand</td>
           </tr>
           <tr>
-            <td>Strategies</td>
+            <td>models/behavioral/</td>
             <td><span class="pattern-badge">Strategy</span></td>
-            <td>ISortStrategy / SortByName... SortByTag...</td>
+            <td>ISortStrategy / SortByName / Size / Extension / Tag</td>
           </tr>
           <tr>
-            <td>Observers</td>
+            <td>models/behavioral/</td>
             <td><span class="pattern-badge">Observer</span></td>
-            <td>SearchSubjectService / RxJS Subject</td>
+            <td>SearchEvent（事件資料模型）</td>
           </tr>
           <tr>
-            <td>Component</td>
+            <td>services/structural/</td>
+            <td><span class="pattern-badge">Composite</span></td>
+            <td>FileSystemService — 建樹、計算、匯出、搜尋</td>
+          </tr>
+          <tr>
+            <td>services/behavioral/</td>
+            <td><span class="pattern-badge">Command</span></td>
+            <td>CommandHistory — Invoker（Undo / Redo）</td>
+          </tr>
+          <tr>
+            <td>services/behavioral/</td>
             <td><span class="pattern-badge">Observer</span></td>
-            <td>AppComponent subscribe → onSearchEvent()</td>
+            <td>SearchSubjectService — RxJS Subject</td>
+          </tr>
+          <tr>
+            <td>pages/demo/</td>
+            <td><span class="pattern-badge">Observer</span></td>
+            <td>Demo Component — subscribe → onSearchEvent()</td>
           </tr>
         </tbody>
       </table>

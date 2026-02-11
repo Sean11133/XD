@@ -21,14 +21,25 @@ graph TB
   end
 
   subgraph App["⚙️ Application Layer — Angular SPA"]
-    Components["📦 Components\nApp / Demo"]
-    Services["🛠️ Services\nFileSystem / Search"]
-    Models["📐 Models\nComposite Tree"]
-    Commands["⌨️ Commands\nSort / Delete / Tag"]
-    Strategies["🔀 Strategies\nSort By *"]
-    Observers["👁️ Observers\nRxJS"]
-    Visitors["🚶 Visitors"]
-    Router["🛤️ Angular Router\nLazy Loading"]
+    direction TB
+    Router["🛤️ Angular Router\nLazy Loading（7 頁）"]
+
+    subgraph Pages["📄 pages/ + shared/"]
+      Views["🖥️ View Components\nHome / UseCase / ClassDiagram\nCollaboration / Sequence\nArchitecture / Demo"]
+      Mermaid["📊 MermaidDiagram\n共享元件"]
+    end
+
+    subgraph SvcLayer["⚙️ services/（依 GoF 三大分類）"]
+      SvcCreational["🏗️ creational/\n（預留）"]
+      SvcStructural["🧱 structural/\nFileSystemService"]
+      SvcBehavioral["🎭 behavioral/\nCommandHistory\nSearchSubjectService"]
+    end
+
+    subgraph ModelLayer["📐 models/（依 GoF 三大分類）"]
+      MdlCreational["🏗️ creational/\n（預留）"]
+      MdlStructural["🧱 structural/\nFileSystemNode · Directory\nWordFile · ImageFile · TextFile\nTagType"]
+      MdlBehavioral["🎭 behavioral/\nICommand · Sort/Delete/TagCommand\nISortStrategy · SortByName...\nIVisitor · XmlExport/SearchVisitor\nSearchEvent"]
+    end
   end
 
   subgraph Backend["☁️ Backend / Infrastructure — Future"]
@@ -38,9 +49,14 @@ graph TB
     Auth["🔐 Auth Service\nOAuth / JWT"]
   end
 
-  Browser --> Components
-  DOM --> Services
-  Services -.-> API
-  Models -.-> DB
+  Browser --> Router
+  Router --> Views
+  Views --> SvcStructural
+  Views --> SvcBehavioral
+  SvcStructural --> MdlStructural
+  SvcStructural --> MdlBehavioral
+  SvcBehavioral --> MdlBehavioral
+  SvcStructural -.-> API
+  MdlStructural -.-> DB
 `;
 }

@@ -81,7 +81,7 @@ export class MermaidDiagramComponent {
   private renderedSvg = '';
 
   openModal(): void {
-    this.scale.set(1);
+    this.scale.set(2);
     this.panX.set(0);
     this.panY.set(0);
     this.expanded.set(true);
