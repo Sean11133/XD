@@ -1,0 +1,100 @@
+<div class="page">
+  <h2 class="page-title">⏱️ Sequence Diagram — 循序圖</h2>
+
+  <!-- 概念說明 -->
+  <section class="concept-section">
+    <h3 class="section-title">📖 什麼是 Sequence Diagram？</h3>
+    <div class="info-card">
+      <p>
+        Sequence Diagram（循序圖）強調<strong>時間順序</strong>來決定物件的互動關係。
+        以任務出發，在達成任務的<strong>時間軸</strong>中，呈現所有會用到的物件與它們之間的互動。
+      </p>
+      <ul>
+        <li>✅ <strong>垂直軸</strong>表示時間（由上到下）</li>
+        <li>✅ <strong>水平軸</strong>表示不同的物件（Lifeline）</li>
+        <li>✅ <strong>箭頭</strong>表示訊息傳遞（同步、非同步、回傳）</li>
+        <li>✅ <strong>啟動條</strong>（Activation Bar）表示物件正在處理某個任務</li>
+      </ul>
+      <div class="tip-box">
+        <strong>💡 與 Collaboration Diagram 的差異：</strong>
+        Sequence Diagram 以時間軸為主軸，適合呈現完整流程； Collaboration Diagram
+        以物件關聯為主軸，適合呈現結構關係。
+      </div>
+    </div>
+  </section>
+
+  <!-- 核心元素 -->
+  <section class="elements-section">
+    <h3 class="section-title">🧱 核心元素</h3>
+    <div class="element-grid">
+      <div class="element-card">
+        <div class="element-visual">
+          <div class="lifeline-demo">
+            <div class="ll-box">Object</div>
+            <div class="ll-line"></div>
+          </div>
+        </div>
+        <strong>Lifeline（生命線）</strong>
+        <p>物件的存在時間，用虛線向下延伸</p>
+      </div>
+      <div class="element-card">
+        <div class="element-visual">
+          <svg viewBox="0 0 80 30" width="80" height="30">
+            <line x1="0" y1="15" x2="60" y2="15" stroke="#4ec9b0" stroke-width="2" />
+            <polygon points="60,10 72,15 60,20" fill="#4ec9b0" />
+          </svg>
+        </div>
+        <strong>同步訊息</strong>
+        <p>實心箭頭，呼叫方等待回傳</p>
+      </div>
+      <div class="element-card">
+        <div class="element-visual">
+          <svg viewBox="0 0 80 30" width="80" height="30">
+            <line
+              x1="60"
+              y1="15"
+              x2="0"
+              y2="15"
+              stroke="#888"
+              stroke-width="1.5"
+              stroke-dasharray="5,3"
+            />
+            <polygon points="0,11 -8,15 0,19" fill="#888" />
+          </svg>
+        </div>
+        <strong>回傳訊息</strong>
+        <p>虛線箭頭，回傳結果</p>
+      </div>
+      <div class="element-card">
+        <div class="element-visual">
+          <div class="activation-demo">
+            <div class="act-bar"></div>
+          </div>
+        </div>
+        <strong>Activation Bar</strong>
+        <p>啟動條，表示物件正在執行</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 場景一：搜尋檔案 -->
+  <section class="diagram-section">
+    <h3 class="section-title">📊 場景：搜尋檔案（Search Files）</h3>
+    <div class="diagram-container">
+      <app-mermaid-diagram [definition]="searchSequence" />
+    </div>
+  </section>
+
+  <!-- 場景二：排序 + Undo -->
+  <section class="diagram-section">
+    <h3 class="section-title">📊 場景：排序檔案 + Undo（Command + Strategy）</h3>
+    <div class="diagram-container">
+      <app-mermaid-diagram [definition]="sortUndoSequence" />
+    </div>
+  </section>
+
+  <div class="page-nav">
+    <a routerLink="/collaboration" class="nav-link">← Collaboration Diagram</a>
+    <a routerLink="/architecture" class="nav-link">下一步：System Architecture →</a>
+  </div>
+</div>

@@ -1,0 +1,163 @@
+.mermaid-wrapper {
+  width: 100%;
+  position: relative;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: box-shadow 0.2s;
+
+  &:hover {
+    box-shadow: 0 0 0 2px rgba(78, 201, 176, 0.3);
+
+    .zoom-hint {
+      opacity: 1;
+    }
+  }
+}
+
+.zoom-hint {
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  font-size: 11px;
+  color: #8b949e;
+  background: rgba(22, 27, 34, 0.85);
+  padding: 4px 10px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.mermaid-loading {
+  text-align: center;
+  padding: 32px;
+  color: #8b949e;
+  font-size: 14px;
+}
+
+.mermaid-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+  padding: 8px 0;
+
+  :deep(svg) {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+// ===== Modal Overlay =====
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.modal-content {
+  width: 92vw;
+  height: 88vh;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+}
+
+.modal-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+  flex-shrink: 0;
+}
+
+.zoom-btn {
+  background: #21262d;
+  color: #c9d1d9;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #30363d;
+  }
+}
+
+.zoom-level {
+  color: #8b949e;
+  font-size: 13px;
+  min-width: 48px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.close-btn {
+  margin-left: auto;
+  background: #21262d;
+  color: #f85149;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #3d1214;
+  }
+}
+
+.modal-diagram {
+  flex: 1;
+  overflow: hidden;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.modal-diagram-inner {
+  transform-origin: center center;
+  transition: transform 0.08s ease-out;
+  will-change: transform;
+}
+
+.modal-mermaid {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+
+  :deep(svg) {
+    max-width: none;
+    height: auto;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}

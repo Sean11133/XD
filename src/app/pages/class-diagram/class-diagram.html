@@ -1,0 +1,216 @@
+<div class="page">
+  <h2 class="page-title">🏗️ Class Diagram — 類別圖</h2>
+
+  <!-- 概念說明 -->
+  <section class="concept-section">
+    <h3 class="section-title">📖 什麼是 Class Diagram？</h3>
+    <div class="info-card">
+      <p>
+        Class Diagram（類別圖）是 UML 中最核心的結構圖，用來表達系統中<strong>類別的結構</strong>
+        與<strong>類別之間的關係</strong>。它是從 Use Case 到實際程式碼的橋樑。
+      </p>
+      <ul>
+        <li>✅ 理解系統的結構：直觀展示類別結構，幫助開發人員理解整體設計</li>
+        <li>✅ 識別潛在的問題：類別之間的耦合度、設計合理性</li>
+        <li>✅ 生成程式碼：一些開發工具可根據類別圖自動生成程式碼</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 核心元素 -->
+  <section class="elements-section">
+    <h3 class="section-title">🧱 類別圖元素</h3>
+    <div class="element-grid">
+      <div class="element-card">
+        <div class="mini-class-box">
+          <div class="mcb-name">ClassName</div>
+          <div class="mcb-section">- attribute: Type</div>
+          <div class="mcb-section">+ method(): ReturnType</div>
+        </div>
+        <strong>類別 (Class)</strong>
+        <p>三格矩形：名稱、屬性、方法</p>
+      </div>
+      <div class="element-card">
+        <div class="relation-visual">
+          <div class="rv-box">Parent</div>
+          <svg viewBox="0 0 40 40" width="40" height="40">
+            <line x1="20" y1="0" x2="20" y2="25" stroke="#4ec9b0" stroke-width="2" />
+            <polygon points="12,25 20,40 28,25" fill="none" stroke="#4ec9b0" stroke-width="2" />
+          </svg>
+          <div class="rv-box">Child</div>
+        </div>
+        <strong>繼承 (Inheritance)</strong>
+        <p>實線 + 空心三角形</p>
+      </div>
+      <div class="element-card">
+        <div class="relation-visual">
+          <div class="rv-box dashed">Interface</div>
+          <svg viewBox="0 0 40 40" width="40" height="40">
+            <line
+              x1="20"
+              y1="0"
+              x2="20"
+              y2="25"
+              stroke="#0e639c"
+              stroke-width="2"
+              stroke-dasharray="4,3"
+            />
+            <polygon points="12,25 20,40 28,25" fill="none" stroke="#0e639c" stroke-width="2" />
+          </svg>
+          <div class="rv-box">Impl</div>
+        </div>
+        <strong>實現 (Implementation)</strong>
+        <p>虛線 + 空心三角形</p>
+      </div>
+      <div class="element-card">
+        <div class="relation-visual horizontal">
+          <div class="rv-box small">Whole</div>
+          <svg viewBox="0 0 60 20" width="60" height="20">
+            <polygon points="0,10 10,4 20,10 10,16" fill="none" stroke="#d18616" stroke-width="2" />
+            <line x1="20" y1="10" x2="60" y2="10" stroke="#d18616" stroke-width="2" />
+          </svg>
+          <div class="rv-box small">Part</div>
+        </div>
+        <strong>聚合 (Aggregation)</strong>
+        <p>實線 + 空心菱形</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 類別圖：依 Pattern 群組展示 -->
+  <section class="diagram-section">
+    <h3 class="section-title">📊 雲端檔案管理系統 — Class Diagram</h3>
+
+    <!-- Composite Pattern -->
+    <div class="pattern-group">
+      <div class="pattern-header" (click)="toggleGroup('composite')">
+        <span class="toggle-icon">{{ expandedGroup() === 'composite' ? '▼' : '▶' }}</span>
+        <span class="pattern-label">Composite Pattern — 檔案系統結構</span>
+      </div>
+      @if (expandedGroup() === 'composite') {
+        <div class="diagram-container">
+          <app-mermaid-diagram [definition]="compositeDiagram" />
+        </div>
+
+        <div class="pattern-note">
+          <strong>🔑 Composite Pattern 角色：</strong>
+          <code>FileSystemNode</code> = Component（抽象基類）| <code>FileNode</code> = Leaf 抽象基類
+          | <code>WordFile / ImageFile / TextFile</code> = Leaf | <code>Directory</code> =
+          Composite（含 children）
+        </div>
+      }
+    </div>
+
+    <!-- Visitor Pattern -->
+    <div class="pattern-group">
+      <div class="pattern-header" (click)="toggleGroup('visitor')">
+        <span class="toggle-icon">{{ expandedGroup() === 'visitor' ? '▼' : '▶' }}</span>
+        <span class="pattern-label">Visitor Pattern — 訪問者</span>
+      </div>
+      @if (expandedGroup() === 'visitor') {
+        <div class="diagram-container">
+          <app-mermaid-diagram [definition]="visitorDiagram" />
+        </div>
+
+        <div class="pattern-note">
+          <strong>🔑 Visitor Pattern 角色：</strong>
+          <code>IVisitor</code> = Visitor 介面（定義 visit 方法）| <code>XmlExportVisitor</code> /
+          <code>ExtensionSearchVisitor</code> = Concrete Visitor | 各 FileSystemNode 的
+          <code>accept()</code> = Double Dispatch 機制
+        </div>
+      }
+    </div>
+
+    <!-- Command Pattern -->
+    <div class="pattern-group">
+      <div class="pattern-header" (click)="toggleGroup('command')">
+        <span class="toggle-icon">{{ expandedGroup() === 'command' ? '▼' : '▶' }}</span>
+        <span class="pattern-label">Command Pattern — 命令</span>
+      </div>
+      @if (expandedGroup() === 'command') {
+        <div class="diagram-container">
+          <app-mermaid-diagram [definition]="commandDiagram" />
+        </div>
+
+        <div class="pattern-note">
+          <strong>🔑 Command Pattern 角色：</strong>
+          <code>ICommand</code> = Command 介面 |
+          <code>SortCommand / DeleteCommand / TagCommand</code> = Concrete Command |
+          <code>CommandHistory</code> = Invoker（管理 Undo/Redo 堆疊）| <code>App Component</code> =
+          Client（建立命令）
+        </div>
+      }
+    </div>
+
+    <!-- Strategy Pattern -->
+    <div class="pattern-group">
+      <div class="pattern-header" (click)="toggleGroup('strategy')">
+        <span class="toggle-icon">{{ expandedGroup() === 'strategy' ? '▼' : '▶' }}</span>
+        <span class="pattern-label">Strategy Pattern — 策略</span>
+      </div>
+      @if (expandedGroup() === 'strategy') {
+        <div class="diagram-container">
+          <app-mermaid-diagram [definition]="strategyDiagram" />
+        </div>
+
+        <div class="pattern-note">
+          <strong>🔑 Strategy Pattern 角色：</strong>
+          <code>ISortStrategy</code> = Strategy 介面 | <code>SortByXxxStrategy</code> = Concrete
+          Strategy | <code>SortCommand</code> = Context（持有 strategy 參考）
+        </div>
+      }
+    </div>
+
+    <!-- Observer Pattern -->
+    <div class="pattern-group">
+      <div class="pattern-header" (click)="toggleGroup('observer')">
+        <span class="toggle-icon">{{ expandedGroup() === 'observer' ? '▼' : '▶' }}</span>
+        <span class="pattern-label">Observer Pattern — 觀察者</span>
+      </div>
+      @if (expandedGroup() === 'observer') {
+        <div class="diagram-container">
+          <app-mermaid-diagram [definition]="observerDiagram" />
+        </div>
+
+        <div class="pattern-note">
+          <strong>🔑 Observer Pattern 角色：</strong>
+          <code>SearchSubjectService</code> = Subject（被觀察者，用 RxJS Subject 實作）|
+          <code>App Component</code> = Observer（觀察者，subscribe 事件流）|
+          <code>SearchEvent</code> = Event Model
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- 關係圖例 -->
+  <section class="legend-section">
+    <h3 class="section-title">📐 關係圖例</h3>
+    <div class="legend-grid">
+      <div class="legend-item">
+        <span class="legend-line solid"></span>
+        <span class="legend-arrow">▷</span>
+        <span>關聯 (Association)：兩個類別之間的直接聯繫</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-line solid"></span>
+        <span class="legend-arrow">◇</span>
+        <span>聚合 (Aggregation)：整體/部分關係，部分可獨立存在</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-line solid"></span>
+        <span class="legend-arrow">△</span>
+        <span>繼承 (Inheritance)：子類別繼承父類別</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-line dashed"></span>
+        <span class="legend-arrow">△</span>
+        <span>實現 (Implementation)：類別實作介面</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="page-nav">
+    <a routerLink="/use-case" class="nav-link">← Use Case Diagram</a>
+    <a routerLink="/collaboration" class="nav-link">下一步：Collaboration Diagram →</a>
+  </div>
+</div>

@@ -1,0 +1,135 @@
+<div class="page">
+  <h2 class="page-title">🖥️ System Architecture — 系統架構圖</h2>
+
+  <!-- 概念說明 -->
+  <section class="concept-section">
+    <h3 class="section-title">📖 什麼是 System Architecture Diagram？</h3>
+    <div class="info-card">
+      <p>
+        System Architecture Diagram（系統架構圖）是一張鳥瞰全局的圖，展示系統中的
+        <strong>Client、Server、Database、Network Node</strong> 等重要基礎設施與網路關係，
+        讓所有人一覽整個系統的運作方式。
+      </p>
+      <ul>
+        <li>✅ 展示系統的部署架構與拓撲</li>
+        <li>✅ 說明 Client/Server 之間的通訊方式</li>
+        <li>✅ 標示重要的技術選型（框架、資料庫、協定等）</li>
+        <li>✅ 提供開發團隊與營運團隊共同的溝通基礎</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 系統架構圖 -->
+  <section class="diagram-section">
+    <h3 class="section-title">📊 雲端檔案管理系統 — System Architecture</h3>
+    <div class="diagram-container">
+      <app-mermaid-diagram [definition]="architectureDiagram" />
+    </div>
+  </section>
+
+  <!-- 架構說明 -->
+  <section class="arch-details">
+    <h3 class="section-title">📝 架構分層說明</h3>
+    <div class="layer-grid">
+      <div class="layer-card client">
+        <h4>📱 Client Layer</h4>
+        <p>
+          使用者通過瀏覽器存取系統。Angular 編譯後的 SPA 在瀏覽器中執行， 所有 UI
+          互動（點擊、輸入）透過 Angular 的事件綁定處理。
+        </p>
+        <div class="tech-tags">
+          <span class="tech-tag">HTML5</span>
+          <span class="tech-tag">CSS/SCSS</span>
+          <span class="tech-tag">TypeScript</span>
+        </div>
+      </div>
+
+      <div class="layer-card app">
+        <h4>⚙️ Application Layer</h4>
+        <p>
+          Angular SPA 的核心層。採用<strong>元件化架構</strong>，業務邏輯封裝於 Service 中， 透過 DI
+          注入。Models 定義資料結構（Composite Pattern），Commands / Strategies / Visitors /
+          Observers 封裝各種設計模式的實作。
+        </p>
+        <div class="tech-tags">
+          <span class="tech-tag">Angular 21</span>
+          <span class="tech-tag">Signals</span>
+          <span class="tech-tag">RxJS</span>
+          <span class="tech-tag">Router</span>
+        </div>
+      </div>
+
+      <div class="layer-card backend">
+        <h4>☁️ Backend / Infrastructure</h4>
+        <p>
+          目前系統為純前端 SPA，資料內建於 Service 中。未來可擴展為具有 REST API 的全端架構，
+          搭配資料庫持久化檔案結構、雲端檔案儲存與身份驗證。
+        </p>
+        <div class="tech-tags">
+          <span class="tech-tag dimmed">REST API</span>
+          <span class="tech-tag dimmed">Database</span>
+          <span class="tech-tag dimmed">Cloud Storage</span>
+          <span class="tech-tag dimmed">Auth</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Design Patterns 在架構中的位置 -->
+  <section class="patterns-in-arch">
+    <h3 class="section-title">🧩 設計模式在架構中的位置</h3>
+    <div class="info-card">
+      <table class="arch-table">
+        <thead>
+          <tr>
+            <th>架構層</th>
+            <th>設計模式</th>
+            <th>實作位置</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Models</td>
+            <td><span class="pattern-badge">Composite</span></td>
+            <td>FileSystemNode / Directory / FileNode</td>
+          </tr>
+          <tr>
+            <td>Models</td>
+            <td><span class="pattern-badge">Visitor</span></td>
+            <td>IVisitor / accept() — Double Dispatch</td>
+          </tr>
+          <tr>
+            <td>Visitors</td>
+            <td><span class="pattern-badge">Visitor</span></td>
+            <td>XmlExportVisitor / ExtensionSearchVisitor</td>
+          </tr>
+          <tr>
+            <td>Commands</td>
+            <td><span class="pattern-badge">Command</span></td>
+            <td>ICommand / CommandHistory / SortCommand ...</td>
+          </tr>
+          <tr>
+            <td>Strategies</td>
+            <td><span class="pattern-badge">Strategy</span></td>
+            <td>ISortStrategy / SortByName... SortByTag...</td>
+          </tr>
+          <tr>
+            <td>Observers</td>
+            <td><span class="pattern-badge">Observer</span></td>
+            <td>SearchSubjectService / RxJS Subject</td>
+          </tr>
+          <tr>
+            <td>Component</td>
+            <td><span class="pattern-badge">Observer</span></td>
+            <td>AppComponent subscribe → onSearchEvent()</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="page-nav">
+    <a routerLink="/sequence" class="nav-link">← Sequence Diagram</a>
+    <a routerLink="/demo" class="nav-link">前往 Live Demo →</a>
+  </div>
+</div>

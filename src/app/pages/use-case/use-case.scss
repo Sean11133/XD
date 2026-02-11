@@ -1,0 +1,129 @@
+:host {
+    display: block;
+}
+
+/* Element Grid */
+.element-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.element-card {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    strong {
+        color: #4ec9b0;
+        font-size: 0.9rem;
+    }
+
+    p {
+        margin: 0;
+        color: #999;
+        font-size: 0.8rem;
+        line-height: 1.5;
+    }
+}
+
+.element-visual {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60px;
+}
+
+.use-case-oval {
+    border: 2px solid #0e639c;
+    border-radius: 50%;
+    padding: 8px 24px;
+    color: #e0e0e0;
+    font-size: 0.85rem;
+    background: #1a2a3e;
+}
+
+.relation-demo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.rel-label {
+    color: #4ec9b0;
+    font-size: 0.75rem;
+}
+
+.rel-line {
+    width: 60px;
+    height: 0;
+    border-top: 2px dashed #4ec9b0;
+
+    &.extend {
+        border-color: #d18616;
+    }
+}
+
+/* Diagram */
+.diagram-container {
+    background: #0d1117;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 20px;
+    overflow-x: auto;
+    margin-bottom: 20px;
+}
+
+.uml-svg {
+    width: 100%;
+    max-width: 900px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+/* Mapping Table */
+.mapping-table {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.mapping-row {
+    display: grid;
+    grid-template-columns: 140px 180px 1fr;
+    gap: 16px;
+    padding: 10px 16px;
+    border-bottom: 1px solid #2a2a2a;
+    align-items: center;
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    &.header {
+        background: #252526;
+        font-weight: bold;
+        color: #dcdcaa;
+        font-size: 0.85rem;
+    }
+
+    span {
+        color: #ccc;
+        font-size: 0.85rem;
+    }
+}
+
+.pattern-tag {
+    color: #4ec9b0 !important;
+    font-weight: bold;
+    font-size: 0.8rem !important;
+}

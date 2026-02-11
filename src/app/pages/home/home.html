@@ -1,0 +1,167 @@
+<div class="page home-page">
+  <section class="hero">
+    <h1>🎓 System Analysis &amp; Design</h1>
+    <h2>系統分析與設計 — 教學暨實作展示平台</h2>
+    <p class="hero-desc">
+      本平台以「雲端檔案管理系統」為實例，帶你從 <strong>URD（使用者需求文件）</strong> 走過完整的
+      <strong>SA（系統分析）</strong>流程，理解每一份設計文件的意義與產出方式，
+      最終對應到<strong>可運行的實作結果</strong>。
+    </p>
+  </section>
+
+  <!-- SA 流程總覽 -->
+  <section class="flow-overview">
+    <h3 class="section-title">📐 SA 設計流程總覽</h3>
+    <div class="flow-steps">
+      <div class="flow-step">
+        <span class="step-num">1</span>
+        <span class="step-label">URD</span>
+        <span class="step-desc">使用者需求文件</span>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <span class="step-num">2</span>
+        <span class="step-label">Use Case</span>
+        <span class="step-desc">使用案例圖</span>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <span class="step-num">3</span>
+        <span class="step-label">Class Diagram</span>
+        <span class="step-desc">類別圖</span>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <span class="step-num">4</span>
+        <span class="step-label">Collaboration</span>
+        <span class="step-desc">合作圖</span>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <span class="step-num">5</span>
+        <span class="step-label">Sequence</span>
+        <span class="step-desc">循序圖</span>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <span class="step-num">6</span>
+        <span class="step-label">Architecture</span>
+        <span class="step-desc">系統架構圖</span>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step highlight">
+        <span class="step-num">7</span>
+        <span class="step-label">實作</span>
+        <span class="step-desc">Live Demo</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- URD 摘要 -->
+  <section class="urd-section">
+    <h3 class="section-title">📄 URD 使用者需求摘要</h3>
+    <div class="urd-card">
+      <p><strong>系統名稱：</strong>雲端檔案管理系統（Cloud File Manager）</p>
+      <p>
+        <strong>系統目標：</strong
+        >提供使用者管理雲端檔案的統一介面，支援多種檔案類型的瀏覽、搜尋、排序、標記與匯出。
+      </p>
+      <ul>
+        <li>✅ 以樹狀結構呈現檔案與目錄的階層關係</li>
+        <li>✅ 支援 Word 文件、圖片、純文字等多種檔案類型</li>
+        <li>✅ 依副檔名搜尋檔案，即時顯示搜尋進度</li>
+        <li>✅ 多種排序策略（名稱、大小、類型、標籤）</li>
+        <li>✅ 檔案標記（Urgent / Work / Personal）</li>
+        <li>✅ 刪除檔案，支援 Undo / Redo</li>
+        <li>✅ 匯出 XML 格式與計算總容量</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 導覽卡片 -->
+  <section class="cards-section">
+    <h3 class="section-title">📚 SA 設計文件導覽</h3>
+    <div class="card-grid">
+      <a class="nav-card" routerLink="/use-case">
+        <div class="card-icon">📋</div>
+        <div class="card-content">
+          <h4>Use Case Diagram</h4>
+          <p>使用案例圖 — 定義系統範圍與角色互動</p>
+          <span class="card-badge required">* 必要</span>
+        </div>
+      </a>
+
+      <a class="nav-card" routerLink="/class-diagram">
+        <div class="card-icon">🏗️</div>
+        <div class="card-content">
+          <h4>Class Diagram</h4>
+          <p>類別圖 — 系統結構、屬性、方法與關係</p>
+          <span class="card-badge required">* 必要</span>
+        </div>
+      </a>
+
+      <a class="nav-card" routerLink="/collaboration">
+        <div class="card-icon">🤝</div>
+        <div class="card-content">
+          <h4>Collaboration Diagram</h4>
+          <p>合作圖 — 物件之間的關聯與訊息傳遞</p>
+          <span class="card-badge required">* 必要</span>
+        </div>
+      </a>
+
+      <a class="nav-card" routerLink="/sequence">
+        <div class="card-icon">⏱️</div>
+        <div class="card-content">
+          <h4>Sequence Diagram</h4>
+          <p>循序圖 — 時序導向的物件互動關係</p>
+          <span class="card-badge required">* 必要</span>
+        </div>
+      </a>
+
+      <a class="nav-card" routerLink="/architecture">
+        <div class="card-icon">🖥️</div>
+        <div class="card-content">
+          <h4>System Architecture</h4>
+          <p>系統架構圖 — 基礎設施與網路拓撲</p>
+          <span class="card-badge required">* 必要</span>
+        </div>
+      </a>
+
+      <a class="nav-card demo-card" routerLink="/demo">
+        <div class="card-icon">🚀</div>
+        <div class="card-content">
+          <h4>Live Demo</h4>
+          <p>實際運行的雲端檔案管理系統</p>
+          <span class="card-badge demo">可互動</span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- 設計模式對應 -->
+  <section class="patterns-section">
+    <h3 class="section-title">🧩 本系統使用的設計模式</h3>
+    <div class="pattern-grid">
+      <div class="pattern-item">
+        <span class="pattern-name">Composite</span>
+        <span class="pattern-desc">檔案/目錄的樹狀結構</span>
+      </div>
+      <div class="pattern-item">
+        <span class="pattern-name">Visitor</span>
+        <span class="pattern-desc">走訪樹結構執行操作</span>
+      </div>
+      <div class="pattern-item">
+        <span class="pattern-name">Observer</span>
+        <span class="pattern-desc">搜尋事件即時通知</span>
+      </div>
+      <div class="pattern-item">
+        <span class="pattern-name">Command</span>
+        <span class="pattern-desc">操作封裝 + Undo/Redo</span>
+      </div>
+      <div class="pattern-item">
+        <span class="pattern-name">Strategy</span>
+        <span class="pattern-desc">可抽換的排序演算法</span>
+      </div>
+    </div>
+  </section>
+</div>

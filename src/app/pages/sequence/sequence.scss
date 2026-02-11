@@ -1,0 +1,96 @@
+:host {
+    display: block;
+}
+
+/* Element Grid */
+.element-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.element-card {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+
+    strong {
+        color: #4ec9b0;
+        font-size: 0.85rem;
+    }
+
+    p {
+        margin: 0;
+        color: #999;
+        font-size: 0.8rem;
+    }
+}
+
+.element-visual {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 50px;
+}
+
+/* Lifeline demo */
+.lifeline-demo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.ll-box {
+    border: 2px solid #0e639c;
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    color: #e0e0e0;
+    border-radius: 3px;
+    background: #1a2a3e;
+}
+
+.ll-line {
+    width: 0;
+    height: 30px;
+    border-left: 2px dashed #555;
+}
+
+/* Activation bar demo */
+.activation-demo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.act-bar {
+    width: 10px;
+    height: 40px;
+    background: #4ec9b0;
+    opacity: 0.6;
+    border-radius: 2px;
+}
+
+/* Diagram */
+.diagram-container {
+    background: #0d1117;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 20px;
+    overflow-x: auto;
+    margin-bottom: 20px;
+}
+
+.uml-svg {
+    width: 100%;
+    max-width: 900px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}

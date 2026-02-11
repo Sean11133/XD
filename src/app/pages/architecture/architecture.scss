@@ -1,0 +1,118 @@
+:host {
+    display: block;
+}
+
+.diagram-container {
+    background: #0d1117;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 20px;
+    overflow-x: auto;
+    margin-bottom: 20px;
+}
+
+.uml-svg {
+    width: 100%;
+    max-width: 800px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+/* Layer Grid */
+.layer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.layer-card {
+    background: #1e1e1e;
+    border-radius: 8px;
+    padding: 20px;
+    border-left: 4px solid #333;
+
+    h4 {
+        margin: 0 0 10px;
+        color: #fff;
+        font-size: 1rem;
+    }
+
+    p {
+        color: #bbb;
+        font-size: 0.85rem;
+        line-height: 1.7;
+        margin: 0 0 12px;
+    }
+
+    &.client {
+        border-left-color: #0e639c;
+    }
+
+    &.app {
+        border-left-color: #4ec9b0;
+    }
+
+    &.backend {
+        border-left-color: #d18616;
+    }
+}
+
+.tech-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.tech-tag {
+    background: #2d2d2d;
+    color: #4ec9b0;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: bold;
+
+    &.dimmed {
+        color: #666;
+        border: 1px dashed #444;
+        background: transparent;
+    }
+}
+
+/* Architecture Table */
+.arch-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+
+    th,
+    td {
+        padding: 10px 14px;
+        text-align: left;
+        border-bottom: 1px solid #2a2a2a;
+    }
+
+    th {
+        color: #dcdcaa;
+        background: #252526;
+        font-weight: bold;
+    }
+
+    td {
+        color: #ccc;
+    }
+
+    tr:hover td {
+        background: rgba(14, 99, 156, 0.1);
+    }
+}
+
+.pattern-badge {
+    background: #1a3a2a;
+    color: #4ec9b0;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}

@@ -1,0 +1,44 @@
+:host {
+    display: block;
+}
+
+.diagram-container {
+    background: #0d1117;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 20px;
+    overflow-x: auto;
+    margin-bottom: 20px;
+}
+
+.uml-svg {
+    width: 100%;
+    max-width: 800px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+.key-points {
+    margin-bottom: 20px;
+
+    ol {
+        padding-left: 20px;
+        margin: 0;
+
+        li {
+            padding: 6px 0;
+            color: #ccc;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+    }
+
+    code {
+        background: #2d2d2d;
+        padding: 1px 5px;
+        border-radius: 3px;
+        color: #4ec9b0;
+        font-size: 0.85rem;
+    }
+}

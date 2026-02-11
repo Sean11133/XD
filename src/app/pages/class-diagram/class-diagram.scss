@@ -1,0 +1,260 @@
+:host {
+    display: block;
+}
+
+/* Element Grid */
+.element-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.element-card {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+
+    strong {
+        color: #4ec9b0;
+        font-size: 0.85rem;
+    }
+
+    p {
+        margin: 0;
+        color: #999;
+        font-size: 0.8rem;
+    }
+}
+
+/* Mini class box demo */
+.mini-class-box {
+    border: 2px solid #4ec9b0;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    min-width: 140px;
+    overflow: hidden;
+
+    .mcb-name {
+        background: #0e639c;
+        color: #fff;
+        padding: 4px 8px;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .mcb-section {
+        padding: 3px 8px;
+        color: #ccc;
+        border-top: 1px solid #4ec9b0;
+    }
+}
+
+/* Relation visual */
+.relation-visual {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+
+    &.horizontal {
+        flex-direction: row;
+        gap: 4px;
+    }
+}
+
+.rv-box {
+    border: 1px solid #4ec9b0;
+    padding: 3px 10px;
+    font-size: 0.7rem;
+    color: #e0e0e0;
+    border-radius: 3px;
+
+    &.dashed {
+        border-style: dashed;
+        border-color: #0e639c;
+    }
+
+    &.small {
+        padding: 2px 6px;
+        font-size: 0.65rem;
+    }
+}
+
+/* Pattern Group */
+.pattern-group {
+    background: #1a1a2e;
+    border: 1px solid #333;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+
+.pattern-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    cursor: pointer;
+    transition: 0.2s;
+
+    &:hover {
+        background: #22223a;
+    }
+}
+
+.toggle-icon {
+    color: #0e639c;
+    font-size: 0.8rem;
+    width: 16px;
+}
+
+.pattern-label {
+    color: #dcdcaa;
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+/* Class Diagram Grid */
+.class-diagram-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    padding: 16px 20px;
+}
+
+/* Class Box */
+.class-box {
+    border: 2px solid #4ec9b0;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #1e1e1e;
+
+    &.abstract {
+        border-color: #dcdcaa;
+    }
+
+    &.interface {
+        border-style: dashed;
+        border-color: #0e639c;
+    }
+
+    &.leaf {
+        border-color: #569cd6;
+    }
+
+    &.invoker {
+        border-color: #c586c0;
+    }
+}
+
+.cb-stereotype {
+    text-align: center;
+    padding: 4px 8px 0;
+    color: #999;
+    font-size: 0.7rem;
+    font-style: italic;
+}
+
+.cb-name {
+    text-align: center;
+    padding: 6px 8px;
+    color: #fff;
+    font-weight: bold;
+    font-size: 0.9rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid #333;
+}
+
+.cb-section {
+    padding: 6px 10px;
+    border-bottom: 1px solid #2a2a2a;
+    min-height: 16px;
+
+    div {
+        font-size: 0.75rem;
+        color: #ccc;
+        padding: 1px 0;
+        font-family: 'Consolas', monospace;
+    }
+
+    &.attrs div {
+        color: #9cdcfe;
+    }
+
+    &.methods div {
+        color: #dcdcaa;
+    }
+}
+
+.cb-relation {
+    padding: 4px 10px;
+    font-size: 0.7rem;
+    color: #888;
+    background: rgba(255, 255, 255, 0.03);
+    text-align: center;
+}
+
+/* Pattern Note */
+.pattern-note {
+    padding: 12px 20px 16px;
+    border-top: 1px solid #2a2a2a;
+    font-size: 0.8rem;
+    color: #bbb;
+    line-height: 1.8;
+
+    code {
+        background: #2d2d2d;
+        padding: 1px 5px;
+        border-radius: 3px;
+        color: #4ec9b0;
+        font-size: 0.75rem;
+    }
+}
+
+/* Legend */
+.legend-section {
+    margin-top: 20px;
+}
+
+.legend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 12px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    color: #ccc;
+}
+
+.legend-line {
+    width: 30px;
+    height: 0;
+
+    &.solid {
+        border-top: 2px solid #888;
+    }
+
+    &.dashed {
+        border-top: 2px dashed #888;
+    }
+}
+
+.legend-arrow {
+    color: #4ec9b0;
+    font-size: 0.9rem;
+}

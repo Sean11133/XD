@@ -1,0 +1,60 @@
+<div class="page">
+  <h2 class="page-title">🤝 Collaboration Diagram — 合作圖</h2>
+
+  <!-- 概念說明 -->
+  <section class="concept-section">
+    <h3 class="section-title">📖 什麼是 Collaboration Diagram？</h3>
+    <div class="info-card">
+      <p>
+        Collaboration Diagram（合作圖）又稱 Communication
+        Diagram，用來展現<strong>物件之間的關聯</strong>，
+        以某個物件為出發點，了解它與其他物件達成一件任務的過程。
+      </p>
+      <ul>
+        <li>✅ 強調物件之間的<strong>結構關係</strong>（誰認識誰）</li>
+        <li>✅ 用編號表示訊息的<strong>順序</strong></li>
+        <li>✅ 適合呈現某個場景中物件之間的<strong>協作方式</strong></li>
+      </ul>
+      <div class="tip-box">
+        <strong>💡 與 Sequence Diagram 的差異：</strong>
+        Collaboration Diagram 強調物件之間的連結關係，Sequence Diagram 強調時間順序。
+        兩者可以互相轉換，表達相同的互動邏輯。
+      </div>
+    </div>
+  </section>
+
+  <!-- 場景一：搜尋檔案 -->
+  <section class="diagram-section">
+    <h3 class="section-title">📊 場景：搜尋檔案（Visitor + Observer）</h3>
+    <div class="diagram-container">
+      <app-mermaid-diagram [definition]="searchDiagram" />
+    </div>
+  </section>
+
+  <!-- 場景二：排序檔案 -->
+  <section class="diagram-section">
+    <h3 class="section-title">📊 場景：排序檔案（Command + Strategy）</h3>
+    <div class="diagram-container">
+      <app-mermaid-diagram [definition]="sortDiagram" />
+    </div>
+  </section>
+
+  <div class="key-points">
+    <h3 class="section-title">💡 合作圖的閱讀重點</h3>
+    <div class="info-card">
+      <ol>
+        <li>
+          <strong>物件名稱格式：</strong><code>instanceName : ClassName</code>（底線表示是物件實例）
+        </li>
+        <li><strong>編號順序：</strong>數字代表訊息的呼叫順序，可以有巢狀編號（如 3.1, 3.2）</li>
+        <li><strong>連線意義：</strong>兩個物件之間有連線代表它們之間有關聯（一方認識另一方）</li>
+        <li><strong>訊息方向：</strong>箭頭方向代表呼叫方向</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="page-nav">
+    <a routerLink="/class-diagram" class="nav-link">← Class Diagram</a>
+    <a routerLink="/sequence" class="nav-link">下一步：Sequence Diagram →</a>
+  </div>
+</div>

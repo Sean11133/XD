@@ -1,0 +1,252 @@
+:host {
+    display: block;
+}
+
+/* Hero Section */
+.hero {
+    text-align: center;
+    padding: 40px 20px 30px;
+    border-bottom: 1px solid #333;
+    margin-bottom: 30px;
+
+    h1 {
+        font-size: 2rem;
+        margin: 0 0 8px;
+        color: #fff;
+    }
+
+    h2 {
+        font-size: 1.1rem;
+        color: #4ec9b0;
+        margin: 0 0 16px;
+        font-weight: 400;
+    }
+
+    .hero-desc {
+        max-width: 700px;
+        margin: 0 auto;
+        color: #bbb;
+        line-height: 1.8;
+        font-size: 0.95rem;
+    }
+}
+
+.section-title {
+    font-size: 1.2rem;
+    color: #dcdcaa;
+    border-bottom: 1px solid #333;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+/* SA Flow Overview */
+.flow-overview {
+    margin-bottom: 30px;
+}
+
+.flow-steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 20px;
+    background: #1a1a2e;
+    border: 1px solid #333;
+    border-radius: 8px;
+}
+
+.flow-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 16px;
+    background: #1e1e1e;
+    border: 1px solid #444;
+    border-radius: 8px;
+    min-width: 100px;
+    transition: 0.3s;
+
+    &:hover {
+        border-color: #0e639c;
+        background: #1a2a3e;
+    }
+
+    &.highlight {
+        border-color: #4ec9b0;
+        background: #1a2e2a;
+
+        .step-label {
+            color: #4ec9b0;
+        }
+    }
+}
+
+.step-num {
+    background: #0e639c;
+    color: #fff;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.step-label {
+    color: #fff;
+    font-weight: bold;
+    font-size: 0.85rem;
+}
+
+.step-desc {
+    color: #888;
+    font-size: 0.7rem;
+}
+
+.flow-arrow {
+    color: #666;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* URD Section */
+.urd-section {
+    margin-bottom: 30px;
+}
+
+.urd-card {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 20px;
+    line-height: 1.8;
+
+    p {
+        margin: 0 0 10px;
+        color: #ccc;
+    }
+
+    ul {
+        list-style: none;
+        padding-left: 0;
+        margin: 0;
+
+        li {
+            padding: 4px 0;
+            color: #bbb;
+            font-size: 0.9rem;
+        }
+    }
+}
+
+/* Navigation Cards */
+.cards-section {
+    margin-bottom: 30px;
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+}
+
+.nav-card {
+    display: flex;
+    gap: 16px;
+    padding: 20px;
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+    text-decoration: none;
+    color: inherit;
+
+    &:hover {
+        border-color: #0e639c;
+        background: #1a2a3e;
+        transform: translateY(-2px);
+    }
+
+    &.demo-card:hover {
+        border-color: #4ec9b0;
+        background: #1a2e2a;
+    }
+}
+
+.card-icon {
+    font-size: 2rem;
+    display: flex;
+    align-items: center;
+}
+
+.card-content {
+    flex: 1;
+
+    h4 {
+        margin: 0 0 4px;
+        color: #fff;
+        font-size: 1rem;
+    }
+
+    p {
+        margin: 0 0 8px;
+        color: #999;
+        font-size: 0.85rem;
+    }
+}
+
+.card-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: bold;
+
+    &.required {
+        background: #5c3a1a;
+        color: #d18616;
+    }
+
+    &.demo {
+        background: #1a3a2a;
+        color: #4ec9b0;
+    }
+}
+
+/* Design Patterns Section */
+.patterns-section {
+    margin-bottom: 30px;
+}
+
+.pattern-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.pattern-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px;
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 8px;
+    text-align: center;
+
+    .pattern-name {
+        color: #4ec9b0;
+        font-weight: bold;
+        font-size: 1rem;
+    }
+
+    .pattern-desc {
+        color: #888;
+        font-size: 0.8rem;
+    }
+}
