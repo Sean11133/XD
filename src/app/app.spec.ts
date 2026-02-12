@@ -1,10 +1,12 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { App } from './app';
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
+      providers: [provideRouter([])],
     }).compileComponents();
   });
 
@@ -14,10 +16,18 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render title', async () => {
+  it('should have sidebarCollapsed initially false', () => {
     const fixture = TestBed.createComponent(App);
-    await fixture.whenStable();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, design-pattern');
+    const app = fixture.componentInstance;
+    expect(app.sidebarCollapsed()).toBe(false);
+  });
+
+  it('should toggle sidebar', () => {
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    app.toggleSidebar();
+    expect(app.sidebarCollapsed()).toBe(true);
+    app.toggleSidebar();
+    expect(app.sidebarCollapsed()).toBe(false);
   });
 });

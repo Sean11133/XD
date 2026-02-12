@@ -1,5 +1,6 @@
 import { FileNode } from './file-system-node.model';
 import type { IVisitor } from '../behavioral/visitor.interface';
+import { formatSize } from './format-size.util';
 
 /**
  * Composite Pattern — Leaf（圖片檔案）
@@ -10,8 +11,9 @@ export class ImageFile extends FileNode {
     sizeKB: number,
     public width: number,
     public height: number,
+    createdAt?: Date,
   ) {
-    super(name, sizeKB);
+    super(name, sizeKB, createdAt);
   }
 
   getIcon(): string {
@@ -23,7 +25,7 @@ export class ImageFile extends FileNode {
   }
 
   getDetails(): string {
-    return `(解析度: ${this.width}x${this.height}, 大小: ${this.sizeKB}KB)`;
+    return `(解析度: ${this.width}x${this.height}, 大小: ${formatSize(this.sizeKB)})`;
   }
 
   accept(visitor: IVisitor): void {

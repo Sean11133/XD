@@ -2,12 +2,10 @@ import { inject, Injectable } from '@angular/core';
 
 import { Directory } from '../../models/structural/directory.model';
 import { FileSystemNode } from '../../models/structural/file-system-node.model';
-import { ImageFile } from '../../models/structural/image-file.model';
-import { TextFile } from '../../models/structural/text-file.model';
-import { WordFile } from '../../models/structural/word-file.model';
 import { SearchSubjectService } from '../behavioral/search-subject.service';
 import { ExtensionSearchVisitor } from '../../models/behavioral/extension-search.visitor';
 import { XmlExportVisitor } from '../../models/behavioral/xml-export.visitor';
+import { FileFactory } from '../../models/creational/file.factory';
 
 /**
  * Service 層 — 封裝所有業務邏輯
@@ -19,26 +17,36 @@ import { XmlExportVisitor } from '../../models/behavioral/xml-export.visitor';
 @Injectable({ providedIn: 'root' })
 export class FileSystemService {
   private readonly searchSubject = inject(SearchSubjectService);
+
   /**
-   * 建構範例檔案樹
+   * 建構範例檔案樹（使用 FileFactory 建構物件）
    */
   buildSampleTree(): Directory {
-    const rootDir = new Directory('根目錄 (Root)');
+    const rootDir = FileFactory.createDirectory('根目錄 (Root)');
 
-    const projectDocs = new Directory('專案文件 (Project_Docs)');
-    projectDocs.add(new WordFile('需求規格書.docx', 500, 15));
-    projectDocs.add(new ImageFile('系統架構圖.png', 2048, 1920, 1080));
+    const projectDocs = FileFactory.createDirectory('專案文件 (Project_Docs)');
+    projectDocs.add(FileFactory.createWord({ name: '需求規格書.docx', sizeKB: 500, pages: 15 }));
+    projectDocs.add(
+      FileFactory.createImage({
+        name: '系統架構圖.png',
+        sizeKB: 2048,
+        width: 1920,
+        height: 1080,
+      }),
+    );
     rootDir.add(projectDocs);
 
-    const personalNotes = new Directory('個人筆記 (Personal_Notes)');
-    personalNotes.add(new TextFile('待辦清單.txt', 1, 'UTF-8'));
+    const personalNotes = FileFactory.createDirectory('個人筆記 (Personal_Notes)');
+    personalNotes.add(
+      FileFactory.createText({ name: '待辦清單.txt', sizeKB: 1, encoding: 'UTF-8' }),
+    );
 
-    const archive = new Directory('2025備份 (Archive_2025)');
-    archive.add(new WordFile('舊會議記錄.docx', 200, 5));
+    const archive = FileFactory.createDirectory('2025備份 (Archive_2025)');
+    archive.add(FileFactory.createWord({ name: '舊會議記錄.docx', sizeKB: 200, pages: 5 }));
     personalNotes.add(archive);
 
     rootDir.add(personalNotes);
-    rootDir.add(new TextFile('README.txt', 0.5, 'ASCII'));
+    rootDir.add(FileFactory.createText({ name: 'README.txt', sizeKB: 0.5, encoding: 'ASCII' }));
 
     return rootDir;
   }
@@ -64,9 +72,6 @@ export class FileSystemService {
    * Visitor 走訪時透過 SearchSubjectService 即時通知所有 Observer
    */
   searchByExtension(root: Directory, extension: string): string[] {
-    // 重置所有節點的高亮狀態
-    this.resetHighlights(root);
-
     // 建立 Visitor 並注入 Subject，讓走訪過程可以發事件
     const visitor = new ExtensionSearchVisitor(extension, this.searchSubject);
     root.accept(visitor);
@@ -78,16 +83,6 @@ export class FileSystemService {
     });
 
     return visitor.getResults();
-  }
-
-  /**
-   * 遞迴重置所有節點的高亮狀態
-   */
-  resetHighlights(node: FileSystemNode): void {
-    node.highlightState = 'none';
-    if (node instanceof Directory) {
-      node.children.forEach((child) => this.resetHighlights(child));
-    }
   }
 
   /**

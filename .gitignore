@@ -6,6 +6,13 @@
 /out-tsc
 /bazel-out
 
+# Build output in docs/ (use CI/CD for GitHub Pages deployment instead)
+/docs/*.js
+/docs/*.css
+/docs/*.html
+/docs/prerendered-routes.json
+/docs/3rdpartylicenses.txt
+
 # Node
 /node_modules
 npm-debug.log
