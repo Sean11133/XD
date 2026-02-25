@@ -92,6 +92,11 @@
         </thead>
         <tbody>
           <tr>
+            <td>models/creational/</td>
+            <td><span class="pattern-badge">Factory</span></td>
+            <td>FileFactory — 封裝檔案節點建構邏輯</td>
+          </tr>
+          <tr>
             <td>models/structural/</td>
             <td><span class="pattern-badge">Composite</span></td>
             <td>FileSystemNode / Directory / WordFile / ImageFile / TextFile</td>
@@ -109,7 +114,7 @@
           <tr>
             <td>models/behavioral/</td>
             <td><span class="pattern-badge">Command</span></td>
-            <td>ICommand / SortCommand / DeleteCommand / TagCommand</td>
+            <td>ICommand / SortCommand / DeleteCommand / TagCommand / RestoreSortCommand</td>
           </tr>
           <tr>
             <td>models/behavioral/</td>
@@ -128,6 +133,11 @@
           </tr>
           <tr>
             <td>services/behavioral/</td>
+            <td><span class="pattern-badge">Facade</span></td>
+            <td>FileManagerFacade — 整合操作入口</td>
+          </tr>
+          <tr>
+            <td>services/behavioral/</td>
             <td><span class="pattern-badge">Command</span></td>
             <td>CommandHistory — Invoker（Undo / Redo）</td>
           </tr>
@@ -135,6 +145,11 @@
             <td>services/behavioral/</td>
             <td><span class="pattern-badge">Observer</span></td>
             <td>SearchSubjectService — RxJS Subject</td>
+          </tr>
+          <tr>
+            <td>services/behavioral/</td>
+            <td><span class="pattern-badge">UI State</span></td>
+            <td>ViewStateService — 節點高亮狀態管理</td>
           </tr>
           <tr>
             <td>pages/demo/</td>

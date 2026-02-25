@@ -1,4 +1,11 @@
-import { Component, ChangeDetectionStrategy, input } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  input,
+  ElementRef,
+  viewChild,
+  AfterViewChecked,
+} from '@angular/core';
 
 // ==========================================
 // ConsoleOutputComponent — Console 面板子元件
@@ -12,7 +19,7 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
   template: `
     <div class="console-box">
       <div class="console-header">📡 Observer Console — 樹狀訪問即時進度</div>
-      <pre class="console-content">{{ content() }}</pre>
+      <pre class="console-content" #consoleContent>{{ content() }}</pre>
     </div>
   `,
   styles: `
@@ -44,7 +51,17 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
     }
   `,
 })
-export class ConsoleOutputComponent {
+export class ConsoleOutputComponent implements AfterViewChecked {
   /** 輸入：Console 顯示的內容 */
   content = input.required<string>();
+
+  private consoleContent = viewChild<ElementRef>('consoleContent');
+
+  /** 每次內容更新後自動捲動至底部 */
+  ngAfterViewChecked(): void {
+    const el = this.consoleContent()?.nativeElement;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }
 }

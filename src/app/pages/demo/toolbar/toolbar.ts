@@ -55,11 +55,15 @@ import type { CommandHistory } from '../../../services/behavioral/command-histor
         @for (tag of allTags; track tag) {
           <button
             class="tag-btn"
-            [style.background-color]="TAG_COLORS[tag]"
+            [style.border-color]="TAG_COLORS[tag]"
+            [style.color]="TAG_COLORS[tag]"
             [disabled]="!hasSelectedNode()"
             (click)="tagClicked.emit(tag)"
           >
             + {{ tag }}
+            @if (tagCounts()[tag] > 0) {
+              <span class="tag-count-badge">{{ tagCounts()[tag] }}</span>
+            }
           </button>
         }
       </div>
@@ -86,11 +90,13 @@ import type { CommandHistory } from '../../../services/behavioral/command-histor
       border-radius: 8px;
       margin-bottom: 16px;
       flex-wrap: wrap;
+      overflow: visible;
     }
     .toolbar-group {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 8px;
+      overflow: visible;
     }
     .toolbar-btn {
       background: #2d2d2d;
@@ -141,15 +147,19 @@ import type { CommandHistory } from '../../../services/behavioral/command-histor
       margin-right: 2px;
     }
     .tag-btn {
-      border: none;
+      border: 2px solid currentColor;
+      background: transparent;
       color: #fff;
-      padding: 4px 10px;
-      border-radius: 4px;
+      padding: 4px 12px;
+      border-radius: 20px;
       cursor: pointer;
       font-family: inherit;
       font-size: 0.8rem;
       font-weight: bold;
       transition: 0.2s;
+      position: relative;
+      overflow: visible;
+      z-index: 0;
       &:hover:not(:disabled) {
         filter: brightness(1.2);
       }
@@ -157,6 +167,23 @@ import type { CommandHistory } from '../../../services/behavioral/command-histor
         opacity: 0.35;
         cursor: not-allowed;
       }
+    }
+    .tag-count-badge {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      background: #e74c3c;
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: bold;
+      min-width: 18px;
+      height: 18px;
+      line-height: 18px;
+      text-align: center;
+      border-radius: 50%;
+      padding: 0 3px;
+      z-index: 1;
+      pointer-events: none;
     }
     .delete-btn {
       background: #5c1a1a;
@@ -181,6 +208,9 @@ export class ToolbarComponent {
 
   /** 輸入：是否有選中的節點 */
   hasSelectedNode = input<boolean>(false);
+
+  /** 輸入：各標籤的即時數量 */
+  tagCounts = input<Record<TagType, number>>({} as Record<TagType, number>);
 
   /** 輸出事件 */
   sortClicked = output<SortType>();

@@ -22,19 +22,21 @@ export class ClassDiagramComponent {
 classDiagram
   class FileSystemNode {
     <<abstract>>
+    +id: number
     +name: string
-    +highlightState: HighlightState
     +tags: Set~TagType~
-    +accept(visitor: IVisitor) void
-    +getSizeKB() number
-    +getIcon() string
-    +getTypeLabel() string
-    +getDetails() string
+    +accept(visitor: IVisitor)* void
+    +getSizeKB()* number
+    +getFormattedSize() string
+    +getIcon()* string
+    +getTypeLabel()* string
+    +getDetails()* string
     +getTagsArray() TagType[]
   }
   class FileNode {
     <<abstract>>
     +sizeKB: number
+    +createdAt: Date
     +getSizeKB() number
   }
   class Directory {
@@ -82,6 +84,10 @@ classDiagram
     +getResult() string
     +visitDirectory(dir) void
     +visitWordFile(file) void
+    +visitImageFile(file) void
+    +visitTextFile(file) void
+    -appendNode(name, content) void
+    -sanitizeTagName(name) string
   }
   class ExtensionSearchVisitor {
     -results: string[]
@@ -89,6 +95,9 @@ classDiagram
     -subject: SearchSubjectService
     +getResults() string[]
     +visitDirectory(dir) void
+    +visitWordFile(file) void
+    +visitImageFile(file) void
+    +visitTextFile(file) void
     -checkFile(file) void
   }
 
@@ -111,6 +120,7 @@ classDiagram
     +executeCommand(cmd) void
     +undo() ICommand
     +redo() ICommand
+    +getLastSortState() SortState
     +canUndo: Signal~boolean~
     +canRedo: Signal~boolean~
   }
@@ -118,6 +128,8 @@ classDiagram
     -root: Directory
     -strategy: ISortStrategy
     -previousOrders: Map
+    +sortType: SortType
+    +ascending: boolean
     +execute() void
     +undo() void
   }
@@ -135,11 +147,20 @@ classDiagram
     +execute() void
     +undo() void
   }
+  class RestoreSortCommand {
+    -root: Directory
+    -originalOrders: Map
+    -sortedOrders: Map
+    +execute() void
+    +undo() void
+  }
 
   ICommand <|.. SortCommand
   ICommand <|.. DeleteCommand
   ICommand <|.. TagCommand
+  ICommand <|.. RestoreSortCommand
   CommandHistory --> ICommand : executes
+  SortCommand --> ISortStrategy : uses
 `;
 
   readonly strategyDiagram = `
@@ -151,18 +172,22 @@ classDiagram
   }
   class SortByNameStrategy {
     -ascending: boolean
+    +name: string
     +sort(nodes) FileSystemNode[]
   }
   class SortBySizeStrategy {
     -ascending: boolean
+    +name: string
     +sort(nodes) FileSystemNode[]
   }
   class SortByExtensionStrategy {
     -ascending: boolean
+    +name: string
     +sort(nodes) FileSystemNode[]
   }
   class SortByTagStrategy {
     -ascending: boolean
+    +name: string
     +sort(nodes) FileSystemNode[]
   }
 
@@ -185,13 +210,13 @@ classDiagram
     +node: FileSystemNode
     +message: string
   }
-  class AppComponent {
+  class DemoComponent {
     <<Observer>>
     -onSearchEvent(event) void
     subscribe → 即時更新 UI
   }
 
   SearchSubjectService --> SearchEvent : emits
-  AppComponent --> SearchSubjectService : subscribes
+  DemoComponent --> SearchSubjectService : subscribes
 `;
 }

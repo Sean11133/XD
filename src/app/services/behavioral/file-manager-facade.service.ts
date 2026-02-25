@@ -8,6 +8,7 @@ import { CommandHistory } from './command-history.service';
 import { SearchSubjectService } from './search-subject.service';
 import { ViewStateService } from './view-state.service';
 import { SortCommand } from '../../models/behavioral/sort.command';
+import { RestoreSortCommand } from '../../models/behavioral/restore-sort.command';
 import { DeleteCommand } from '../../models/behavioral/delete.command';
 import { TagCommand } from '../../models/behavioral/tag.command';
 import type { TagAction } from '../../models/behavioral/tag.command';
@@ -34,21 +35,35 @@ export class FileManagerFacade {
   private readonly searchSubject = inject(SearchSubjectService);
   readonly viewState = inject(ViewStateService);
 
-  /** 建立排序策略對應表 */
+  /** 建立排序策略（依類型動態建立，避免每次建構全部策略物件） */
   private createStrategy(type: SortType, ascending: boolean): ISortStrategy {
-    const strategyMap: Record<SortType, ISortStrategy> = {
-      name: new SortByNameStrategy(ascending),
-      size: new SortBySizeStrategy(ascending),
-      extension: new SortByExtensionStrategy(ascending),
-      tag: new SortByTagStrategy(ascending),
-    };
-    return strategyMap[type];
+    switch (type) {
+      case 'name':
+        return new SortByNameStrategy(ascending);
+      case 'size':
+        return new SortBySizeStrategy(ascending);
+      case 'extension':
+        return new SortByExtensionStrategy(ascending);
+      case 'tag':
+        return new SortByTagStrategy(ascending);
+    }
   }
 
   /** 排序 */
   sort(root: Directory, type: SortType, ascending: boolean): string {
     const strategy = this.createStrategy(type, ascending);
-    const command = new SortCommand(root, strategy);
+    const command = new SortCommand(root, strategy, type, ascending);
+    this.commandHistory.executeCommand(command);
+    return command.description;
+  }
+
+  /** 取消排序（封裝為正規 Command，可被 undo/redo） */
+  restoreSort(root: Directory, lastSortCommand: SortCommand): string {
+    const command = new RestoreSortCommand(
+      root,
+      lastSortCommand.previousOrders,
+      lastSortCommand.description,
+    );
     this.commandHistory.executeCommand(command);
     return command.description;
   }

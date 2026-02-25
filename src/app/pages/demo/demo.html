@@ -12,6 +12,7 @@
     [activeSortType]="activeSortType()"
     [activeSortDirection]="activeSortDirection()"
     [hasSelectedNode]="!!selectedNode()"
+    [tagCounts]="tagCounts()"
     (sortClicked)="sortBy($event)"
     (deleteClicked)="deleteSelected()"
     (tagClicked)="toggleTag($event)"
@@ -26,6 +27,7 @@
     <app-tree-view
       [root]="root()"
       [selectedNode]="selectedNode()"
+      [treeVersion]="treeVersion()"
       (nodeClicked)="selectNode($event)"
     />
 

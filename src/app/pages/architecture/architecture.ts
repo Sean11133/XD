@@ -32,13 +32,13 @@ graph TB
     subgraph SvcLayer["⚙️ services/（依 GoF 三大分類）"]
       SvcCreational["🏗️ creational/\n（預留）"]
       SvcStructural["🧱 structural/\nFileSystemService"]
-      SvcBehavioral["🎭 behavioral/\nCommandHistory\nSearchSubjectService"]
+      SvcBehavioral["🎭 behavioral/\nFileManagerFacade\nCommandHistory\nSearchSubjectService\nViewStateService"]
     end
 
     subgraph ModelLayer["📐 models/（依 GoF 三大分類）"]
-      MdlCreational["🏗️ creational/\n（預留）"]
+      MdlCreational["🏗️ creational/\nFileFactory"]
       MdlStructural["🧱 structural/\nFileSystemNode · Directory\nWordFile · ImageFile · TextFile\nTagType"]
-      MdlBehavioral["🎭 behavioral/\nICommand · Sort/Delete/TagCommand\nISortStrategy · SortByName...\nIVisitor · XmlExport/SearchVisitor\nSearchEvent"]
+      MdlBehavioral["🎭 behavioral/\nICommand · Sort/Delete/Tag/RestoreSortCmd\nISortStrategy · SortByName...\nIVisitor · XmlExport/SearchVisitor\nSearchEvent"]
     end
   end
 
@@ -51,11 +51,12 @@ graph TB
 
   Browser --> Router
   Router --> Views
-  Views --> SvcStructural
   Views --> SvcBehavioral
+  SvcBehavioral --> SvcStructural
   SvcStructural --> MdlStructural
   SvcStructural --> MdlBehavioral
   SvcBehavioral --> MdlBehavioral
+  MdlCreational --> MdlStructural
   SvcStructural -.-> API
   MdlStructural -.-> DB
 `;

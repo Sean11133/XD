@@ -25,6 +25,7 @@ graph LR
     UC9([匯出 XML])
     UC10([計算總容量])
     UC11([即時通知觀察者])
+    UC12([建立範例檔案樹])
   end
 
   User(("👤 使用者<br/>Primary"))
@@ -37,6 +38,7 @@ graph LR
   User --> UC7
   User --> UC9
   User --> UC10
+  User --> UC12
 
   Observer --> UC3
   Observer --> UC11

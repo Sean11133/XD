@@ -135,9 +135,9 @@
         <div class="pattern-note">
           <strong>🔑 Command Pattern 角色：</strong>
           <code>ICommand</code> = Command 介面 |
-          <code>SortCommand / DeleteCommand / TagCommand</code> = Concrete Command |
-          <code>CommandHistory</code> = Invoker（管理 Undo/Redo 堆疊）| <code>App Component</code> =
-          Client（建立命令）
+          <code>SortCommand / DeleteCommand / TagCommand / RestoreSortCommand</code> = Concrete
+          Command | <code>CommandHistory</code> = Invoker（管理 Undo/Redo 堆疊）|
+          <code>FileManagerFacade</code> = Client（建立命令）
         </div>
       }
     </div>
@@ -175,7 +175,7 @@
         <div class="pattern-note">
           <strong>🔑 Observer Pattern 角色：</strong>
           <code>SearchSubjectService</code> = Subject（被觀察者，用 RxJS Subject 實作）|
-          <code>App Component</code> = Observer（觀察者，subscribe 事件流）|
+          <code>DemoComponent</code> = Observer（觀察者，subscribe 事件流）|
           <code>SearchEvent</code> = Event Model
         </div>
       }

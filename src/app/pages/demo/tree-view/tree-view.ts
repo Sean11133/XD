@@ -82,9 +82,9 @@ import { ViewStateService } from '../../../services/behavioral/view-state.servic
       flex-direction: column;
     }
     .tree-panel {
-      flex: 2;
       min-height: 500px;
       overflow-y: auto;
+      overflow-x: hidden;
     }
     .panel-title {
       margin-top: 0;
@@ -121,6 +121,9 @@ import { ViewStateService } from '../../../services/behavioral/view-state.servic
       padding: 2px 6px;
       border-radius: 4px;
       border: 1px solid transparent;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      min-width: 0;
     }
     .icon {
       width: 20px;
@@ -196,6 +199,9 @@ export class TreeViewComponent {
 
   /** 輸入：當前選中的節點 */
   selectedNode = input<FileSystemNode | null>(null);
+
+  /** 輸入：版本號，變更時強制 OnPush 重新渲染 */
+  treeVersion = input(0);
 
   /** 輸出：節點被點擊事件 */
   nodeClicked = output<FileSystemNode>();

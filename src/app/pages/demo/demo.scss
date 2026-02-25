@@ -7,7 +7,7 @@
 }
 
 .container-dark {
-  padding: 0;
+  padding: 0 1.5rem;
 }
 
 /* Header */
@@ -38,6 +38,18 @@ h1 {
 .layout {
   display: flex;
   gap: 20px;
+
+  >app-tree-view {
+    width: calc(60% - 10px);
+    min-width: 0;
+    flex: none;
+  }
+
+  >.action-panel {
+    width: calc(40% - 10px);
+    min-width: 0;
+    flex: none;
+  }
 }
 
 /* Toolbar */

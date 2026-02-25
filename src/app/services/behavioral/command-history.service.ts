@@ -1,6 +1,8 @@
 import { Injectable, signal, computed } from '@angular/core';
 
 import type { ICommand } from '../../models/behavioral/command.interface';
+import { SortCommand, type SortType } from '../../models/behavioral/sort.command';
+import { RestoreSortCommand } from '../../models/behavioral/restore-sort.command';
 
 // ==========================================
 // Command Pattern — Invoker（調用者）
@@ -21,7 +23,7 @@ import type { ICommand } from '../../models/behavioral/command.interface';
 @Injectable({ providedIn: 'root' })
 export class CommandHistory {
   /** 已執行命令堆疊（可 undo） */
-  private undoStack = signal<ICommand[]>([]);
+  private readonly undoStack = signal<ICommand[]>([]);
 
   /** 已撤銷命令堆疊（可 redo） */
   private redoStack = signal<ICommand[]>([]);
@@ -76,6 +78,24 @@ export class CommandHistory {
     this.redoStack.set(redoStack.slice(0, -1));
     this.undoStack.update((undo) => [...undo, command]);
     return command;
+  }
+
+  /**
+   * 取得最後一次排序狀態（封裝 undoStack 遍歷邏輯）
+   * 從堆疊頂端往回找最近的 SortCommand 或 RestoreSortCommand
+   */
+  getLastSortState(): { sortType: SortType; ascending: boolean } | null {
+    const stack = this.undoStack();
+    for (let i = stack.length - 1; i >= 0; i--) {
+      const cmd = stack[i];
+      if (cmd instanceof SortCommand) {
+        return { sortType: cmd.sortType, ascending: cmd.ascending };
+      }
+      if (cmd instanceof RestoreSortCommand) {
+        return null; // 排序已被取消
+      }
+    }
+    return null;
   }
 
   /** 清空所有歷史 */

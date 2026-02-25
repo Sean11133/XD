@@ -13,36 +13,42 @@ import { MermaidDiagramComponent } from '../../shared/mermaid-diagram';
 export class CollaborationComponent {
   readonly searchDiagram = `
 graph LR
-  app["app : AppComponent"]
+  demo["demo : DemoComponent"]
+  facade["facade : FileManagerFacade"]
   fsService["fsService : FileSystemService"]
   visitor["visitor : ExtensionSearchVisitor"]
   subject["subject : SearchSubjectService"]
   root["root : Directory"]
   file["file : WordFile"]
 
-  app -->|"1: searchByExtension(root, ext)"| fsService
-  fsService -->|"2: &lt;&lt;create&gt;&gt;"| visitor
-  fsService -->|"3: root.accept(visitor)"| root
-  root -->|"4: visitor.visitDirectory(this)"| visitor
-  visitor -->|"5: subject.notify(visiting)"| subject
-  root -->|"6: child.accept(visitor)"| file
-  file -->|"7: visitor.visitWordFile(this)"| visitor
-  visitor -->|"8: subject.notify(matched)"| subject
-  subject -.->|"9: onSearchEvent [Observer 回調]"| app
+  demo -->|"1: searchByExtension(root, ext)"| facade
+  facade -->|"1.1: viewState.resetTree(root)"| facade
+  facade -->|"2: searchByExtension(root, ext)"| fsService
+  fsService -->|"3: &lt;&lt;create&gt;&gt;"| visitor
+  fsService -->|"4: root.accept(visitor)"| root
+  root -->|"5: visitor.visitDirectory(this)"| visitor
+  visitor -->|"6: subject.notify(visiting)"| subject
+  root -->|"7: child.accept(visitor)"| file
+  file -->|"8: visitor.visitWordFile(this)"| visitor
+  visitor -->|"9: subject.notify(matched)"| subject
+  subject -.->|"10: onSearchEvent [Observer 回調]"| demo
 `;
 
   readonly sortDiagram = `
 graph LR
-  app["app : AppComponent"]
+  demo["demo : DemoComponent"]
+  facade["facade : FileManagerFacade"]
   cmd["cmd : SortCommand"]
   history["history : CommandHistory"]
   strategy["strategy : SortByNameStrategy"]
   root["root : Directory"]
 
-  app -->|"1: &lt;&lt;create&gt;&gt;"| cmd
-  app -->|"2: history.executeCommand(cmd)"| history
-  history -->|"3: cmd.execute()"| cmd
-  cmd -->|"4: strategy.sort(children)"| strategy
-  cmd -->|"5: dir.children = sorted"| root
+  demo -->|"1: sort(root, type, asc)"| facade
+  facade -->|"1.1: createStrategy(type, asc)"| strategy
+  facade -->|"2: &lt;&lt;create&gt;&gt;"| cmd
+  facade -->|"3: history.executeCommand(cmd)"| history
+  history -->|"4: cmd.execute()"| cmd
+  cmd -->|"5: strategy.sort(children)"| strategy
+  cmd -->|"6: dir.children = sorted"| root
 `;
 }
