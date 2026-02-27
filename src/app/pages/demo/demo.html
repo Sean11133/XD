@@ -1,7 +1,9 @@
 <div class="container-dark">
   <header>
     <h1>☁️ 雲端檔案管理系統 — Live Demo</h1>
-    <div class="badge">Composite + Visitor + Observer + Command + Strategy Pattern</div>
+    <div class="badge">
+      Composite + Visitor + Observer + Command + Strategy + Decorator + Adapter
+    </div>
   </header>
 
   <!-- ==========================================
@@ -64,7 +66,7 @@
           <app-console-output [content]="consoleOutput()" />
         </div>
         <div class="observer-side">
-          <app-dashboard-panel [stats]="dashboardStats()" />
+          <app-dashboard-panel [adapter]="dashboardDisplay()" />
         </div>
       </div>
     </div>

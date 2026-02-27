@@ -1,13 +1,14 @@
 import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 
-import type { DashboardStats } from '../../../models/behavioral/dashboard.observer';
+import type { IDashboardDisplay } from '../../../models/structural/search-event.adapter';
 
 // ==========================================
 // DashboardPanelComponent — 搜尋進度儀表板（Dumb Component）
 //
-// Observer Pattern 的 UI 呈現層：
-//   DashboardObserver 負責收集統計 → 此元件負責顯示
-//   與 Subject 完全解耦，只接收純資料
+// 🔌 Day 5 — Adapter Pattern 整合：
+//   接收 IDashboardDisplay（目標介面），
+//   由 SearchEventAdapter 負責將 SearchEvent 轉換為此介面。
+//   元件不知道資料來源是 SearchEvent，只依賴目標介面。
 // ==========================================
 
 @Component({
@@ -16,38 +17,48 @@ import type { DashboardStats } from '../../../models/behavioral/dashboard.observ
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="dashboard">
-      <div class="dashboard-header">📊 Observer Dashboard — 即時搜尋狀態</div>
-      @if (stats(); as s) {
+      <div class="dashboard-header">📊 Dashboard — Adapter Pattern 介面轉換</div>
+      @if (adapter(); as a) {
         <div class="dashboard-body">
           <div class="stat-row">
             <span class="stat-label">狀態</span>
-            <span class="stat-value" [class.complete]="s.isComplete">
-              {{ s.isComplete ? '✅ 完成' : '🔄 搜尋中...' }}
+            <span class="stat-value" [class.complete]="a.isSearchComplete()">
+              {{ a.isSearchComplete() ? '✅ 完成' : '🔄 搜尋中...' }}
             </span>
           </div>
           <div class="stat-row">
+            <span class="stat-label">進度</span>
+            <span class="stat-value progress-pct">{{ a.getProgress() }}%</span>
+          </div>
+          <div class="stat-row">
             <span class="stat-label">已訪問節點</span>
-            <span class="stat-value">{{ s.totalVisited }}</span>
+            <span class="stat-value">{{ a.getVisitedCount() }}</span>
           </div>
           <div class="stat-row">
             <span class="stat-label">匹配檔案</span>
-            <span class="stat-value matched">{{ s.totalMatched }}</span>
+            <span class="stat-value matched">{{ a.getMatchedCount() }}</span>
           </div>
-          @if (s.totalVisited > 0) {
+          @if (a.getVisitedCount() > 0) {
             <div class="progress-bar">
               <div
                 class="progress-fill"
-                [class.complete]="s.isComplete"
-                [style.width.%]="s.isComplete ? 100 : 85"
+                [class.complete]="a.isSearchComplete()"
+                [style.width.%]="a.getProgress()"
               ></div>
             </div>
           }
+          @if (a.getCurrentNodeName(); as nodeName) {
+            <div class="stat-row current-node">
+              <span class="stat-label">目前節點</span>
+              <span class="stat-value node-name">{{ nodeName }}</span>
+            </div>
+          }
           <div class="stat-row summary">
-            <span>{{ s.progressText }}</span>
+            <span>{{ a.getSummary() }}</span>
           </div>
         </div>
       } @else {
-        <div class="empty-state">點擊「搜尋」觸發 Observer</div>
+        <div class="empty-state">點擊「搜尋」觸發 Observer + Adapter</div>
       }
     </div>
   `,
@@ -127,6 +138,17 @@ import type { DashboardStats } from '../../../models/behavioral/dashboard.observ
     .progress-fill.complete {
       background: #64ffda;
     }
+    .current-node .node-name {
+      font-size: 0.85rem;
+      color: #82b1ff;
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .progress-pct {
+      color: #e94560;
+    }
     .empty-state {
       flex: 1;
       display: flex;
@@ -138,6 +160,6 @@ import type { DashboardStats } from '../../../models/behavioral/dashboard.observ
   `,
 })
 export class DashboardPanelComponent {
-  /** 輸入：DashboardObserver 的統計資料，null 表示尚未搜尋 */
-  stats = input<DashboardStats | null>(null);
+  /** 輸入：IDashboardDisplay（Adapter Pattern 目標介面），null 表示尚未搜尋 */
+  adapter = input<IDashboardDisplay | null>(null);
 }

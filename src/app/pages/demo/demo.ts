@@ -18,8 +18,9 @@ import { TagType as TagTypeEnum } from '../../models/structural/tag.model';
 import { SearchSubjectService } from '../../services/behavioral/search-subject.service';
 import type { SearchEvent } from '../../models/behavioral/search-event.model';
 import { ConsoleObserver } from '../../models/behavioral/console.observer';
-import { DashboardObserver } from '../../models/behavioral/dashboard.observer';
-import type { DashboardStats } from '../../models/behavioral/dashboard.observer';
+import { SearchEventAdapter } from '../../models/structural/search-event.adapter';
+import type { IDashboardDisplay } from '../../models/structural/search-event.adapter';
+import { decorateLogEntry } from '../../models/structural/log-decorator.factory';
 import {
   FileManagerFacade,
   type SortType,
@@ -36,12 +37,17 @@ type SortDirection = 'asc' | 'desc' | null;
 
 // ==========================================
 // Live Demo — 雲端檔案管理系統（容器元件 / Smart Component）
-// 整合 Composite + Visitor + Observer + Command + Strategy Pattern
+// 整合 Composite + Visitor + Observer + Command + Strategy
+//      + Decorator + Adapter Pattern
 //
 // Observer Pattern 整合：
 //   Subject（發佈端）= SearchSubjectService
-//   Observer（接收端）= ConsoleObserver / DashboardObserver / RxJS subscribe
+//   Observer（接收端）= ConsoleObserver / SearchEventAdapter / RxJS subscribe
 //   發佈端與接收端完全解耦，可各自獨立開發
+//
+// 🎨 Day 5 新增：
+//   Decorator Pattern — ConsoleObserver 用裝飾器鏈美化日誌
+//   Adapter Pattern  — SearchEventAdapter 將事件流轉為 Dashboard 介面
 // ==========================================
 
 @Component({
@@ -65,17 +71,19 @@ export class DemoComponent implements OnInit, OnDestroy {
 
   /**
    * GoF Observer Pattern — 兩個獨立的接收端
-   * 各自關注不同面向，與 Subject 完全解耦
+   *
+   * ConsoleObserver：日誌觀察者，內部用 Decorator Pattern 裝飾訊息
+   * SearchEventAdapter：Adapter Pattern，將 SearchEvent 轉為 IDashboardDisplay
    */
   private readonly consoleObserver = new ConsoleObserver();
-  private readonly dashboardObserver = new DashboardObserver();
+  private readonly dashboardAdapter = new SearchEventAdapter();
 
   root = signal<Directory>(new Directory('Loading...'));
-  consoleOutput = signal<string>('系統準備就緒...\n等待指令。');
+  consoleOutput = signal<string>('系統準備就緒...<br>等待指令。');
   searchExt = signal<string>('.docx');
 
-  /** DashboardObserver 的即時統計資料 */
-  dashboardStats = signal<DashboardStats | null>(null);
+  /** Adapter Pattern — 提供 IDashboardDisplay 介面給 Dashboard 元件 */
+  dashboardDisplay = signal<IDashboardDisplay | null>(null);
 
   selectedNode = signal<FileSystemNode | null>(null);
   activeSortType = signal<SortType | null>(null);
@@ -96,17 +104,17 @@ export class DemoComponent implements OnInit, OnDestroy {
     return counts as Record<TagType, number>;
   });
 
-  /** Observer Pattern — 統一的日誌累積陣列 */
-  private consoleLogs: string[] = ['系統準備就緒...\n等待指令。'];
+  /** Observer Pattern — 統一的 HTML 日誌累積陣列 */
+  private consoleLogs: string[] = ['系統準備就緒...<br>等待指令。'];
 
   /**
    * Observer Pattern — 統一日誌推送入口
-   * 所有操作事件都透過此方法追加至日誌流，
-   * 確保 Console（Observer）完整記錄所有歷程。
+   * 非搜尋事件也透過 Decorator Pattern 裝飾後追加至日誌流
    */
   private appendLog(message: string): void {
-    this.consoleLogs.push(message);
-    this.consoleOutput.set(this.consoleLogs.join('\n'));
+    const decorated = decorateLogEntry(message);
+    this.consoleLogs.push(decorated.render());
+    this.consoleOutput.set(this.consoleLogs.join('<br>'));
   }
 
   constructor() {
@@ -116,7 +124,7 @@ export class DemoComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // GoF Observer Pattern — 註冊觀察者到 Subject（attach）
     this.searchSubject.attach(this.consoleObserver);
-    this.searchSubject.attach(this.dashboardObserver);
+    this.searchSubject.attach(this.dashboardAdapter);
 
     // RxJS 訂閱 — 處理 Angular UI 相關的即時更新（高亮、重繪）
     this.searchSubject.events$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
@@ -127,7 +135,7 @@ export class DemoComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     // GoF Observer Pattern — 移除觀察者（detach）
     this.searchSubject.detach(this.consoleObserver);
-    this.searchSubject.detach(this.dashboardObserver);
+    this.searchSubject.detach(this.dashboardAdapter);
   }
 
   private onSearchEvent(event: SearchEvent): void {
@@ -268,16 +276,20 @@ export class DemoComponent implements OnInit, OnDestroy {
 
     // 重置 GoF Observer 狀態（每次搜尋重新計數）
     this.consoleObserver.clear();
-    this.dashboardObserver.reset();
-    this.dashboardStats.set(null);
+    this.dashboardAdapter.reset();
+    this.dashboardDisplay.set(null);
+
+    // Adapter Pattern — 計算樹的總節點數，讓進度條能顯示百分比
+    const totalNodes = this.countTreeNodes(this.root());
+    this.dashboardAdapter.setExpectedTotal(totalNodes);
 
     this.appendLog(`[Observer] 🔍 開始搜尋 "${currentExt}"...\n${'─'.repeat(36)}`);
 
-    // 搜尋過程中 Subject 自動 notify → ConsoleObserver / DashboardObserver 各自更新
+    // 搜尋過程中 Subject 自動 notify → ConsoleObserver / SearchEventAdapter 各自更新
     const results = this.facade.searchByExtension(this.root(), currentExt);
 
-    // 搜尋完成，從 DashboardObserver 取得統計
-    this.dashboardStats.set(this.dashboardObserver.getStats());
+    // 搜尋完成，將 Adapter（IDashboardDisplay）傳給 Dashboard 元件
+    this.dashboardDisplay.set(this.dashboardAdapter);
 
     if (results.length === 0) {
       this.appendLog(`⚠️ 未找到符合 "${currentExt}" 的檔案。`);
@@ -286,5 +298,13 @@ export class DemoComponent implements OnInit, OnDestroy {
       this.appendLog(`📋 搜尋結果摘要：`);
       results.forEach((r, i) => this.appendLog(`  ${i + 1}. ${r}`));
     }
+  }
+
+  /** 遞迴計算樹的總節點數（供 Adapter 計算進度百分比） */
+  private countTreeNodes(node: FileSystemNode): number {
+    if (node instanceof Directory) {
+      return 1 + node.children.reduce((sum, child) => sum + this.countTreeNodes(child), 0);
+    }
+    return 1;
   }
 }
