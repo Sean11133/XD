@@ -2,7 +2,7 @@
   <header>
     <h1>☁️ 雲端檔案管理系統 — Live Demo</h1>
     <div class="badge">
-      Composite + Visitor + Observer + Command + Strategy + Decorator + Adapter
+      Composite + Visitor + Observer + Command + Strategy + Decorator + Adapter + Singleton
     </div>
   </header>
 
@@ -14,10 +14,13 @@
     [activeSortType]="activeSortType()"
     [activeSortDirection]="activeSortDirection()"
     [hasSelectedNode]="!!selectedNode()"
+    [canPaste]="canPaste()"
     [tagCounts]="tagCounts()"
     (sortClicked)="sortBy($event)"
     (deleteClicked)="deleteSelected()"
     (tagClicked)="toggleTag($event)"
+    (copyClicked)="copySelected()"
+    (pasteClicked)="pasteToSelected()"
     (undoClicked)="undo()"
     (redoClicked)="redo()"
   />

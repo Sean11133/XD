@@ -15,6 +15,7 @@ import { Directory } from '../../models/structural/directory.model';
 import { FileSystemNode } from '../../models/structural/file-system-node.model';
 import type { TagType } from '../../models/structural/tag.model';
 import { TagType as TagTypeEnum } from '../../models/structural/tag.model';
+import { Clipboard } from '../../models/creational/clipboard.singleton';
 import { SearchSubjectService } from '../../services/behavioral/search-subject.service';
 import type { SearchEvent } from '../../models/behavioral/search-event.model';
 import { ConsoleObserver } from '../../models/behavioral/console.observer';
@@ -38,7 +39,7 @@ type SortDirection = 'asc' | 'desc' | null;
 // ==========================================
 // Live Demo — 雲端檔案管理系統（容器元件 / Smart Component）
 // 整合 Composite + Visitor + Observer + Command + Strategy
-//      + Decorator + Adapter Pattern
+//      + Decorator + Adapter + Singleton Pattern
 //
 // Observer Pattern 整合：
 //   Subject（發佈端）= SearchSubjectService
@@ -48,6 +49,10 @@ type SortDirection = 'asc' | 'desc' | null;
 // 🎨 Day 5 新增：
 //   Decorator Pattern — ConsoleObserver 用裝飾器鏈美化日誌
 //   Adapter Pattern  — SearchEventAdapter 將事件流轉為 Dashboard 介面
+//
+// 🎨 Day 6 新增：
+//   Command Pattern  — CopyCommand / PasteCommand（複製、貼上）
+//   Singleton Pattern — Clipboard 全域共享剪貼簿
 // ==========================================
 
 @Component({
@@ -88,6 +93,23 @@ export class DemoComponent implements OnInit, OnDestroy {
   selectedNode = signal<FileSystemNode | null>(null);
   activeSortType = signal<SortType | null>(null);
   activeSortDirection = signal<SortDirection>(null);
+
+  /** Singleton — Clipboard 實例（供 canPaste 計算用） */
+  private readonly clipboard = Clipboard.getInstance();
+
+  /**
+   * 是否可以貼上：
+   * 1. 剪貼簿有內容
+   * 2. 選中的節點是目錄（或未選取時貼到根目錄）
+   */
+  canPaste = computed(() => {
+    // 讀取 treeVersion 確保 signal 依賴更新
+    this.treeVersion();
+    if (!this.clipboard.hasContent()) return false;
+    const node = this.selectedNode();
+    // 未選取 → 可貼到根目錄；選取目錄 → 可貼
+    return !node || node instanceof Directory;
+  });
 
   /** 遞增版本號，強制 OnPush 子元件重新渲染 */
   treeVersion = signal(0);
@@ -199,6 +221,32 @@ export class DemoComponent implements OnInit, OnDestroy {
 
     const desc = this.facade.toggleTag(node, tag);
     this.appendLog(`[Command] 🏷️ ${desc}`);
+    this.treeVersion.update((v) => v + 1);
+  }
+
+  /** Command Pattern — 複製選取的節點到 Clipboard（Singleton） */
+  copySelected(): void {
+    const node = this.selectedNode();
+    if (!node) return;
+
+    const desc = this.facade.copyNode(node);
+    this.appendLog(`[Command] 📋 ${desc}`);
+    this.treeVersion.update((v) => v + 1);
+  }
+
+  /** Command Pattern — 從 Clipboard（Singleton）貼上到目標目錄 */
+  pasteToSelected(): void {
+    // 決定貼上目標：選中目錄 → 該目錄；未選取 → 根目錄
+    const node = this.selectedNode();
+    const targetDir = node instanceof Directory ? node : this.root();
+
+    const desc = this.facade.pasteNode(targetDir);
+    if (!desc) {
+      this.appendLog('[Command] ⚠️ 剪貼簿為空，無法貼上');
+      return;
+    }
+
+    this.appendLog(`[Command] 📌 ${desc}`);
     this.treeVersion.update((v) => v + 1);
   }
 

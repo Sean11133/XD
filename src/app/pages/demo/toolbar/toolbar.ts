@@ -70,6 +70,27 @@ import type { CommandHistory } from '../../../services/behavioral/command-histor
 
       <span class="toolbar-divider">|</span>
 
+      <div class="toolbar-group">
+        <button
+          class="toolbar-btn copy-btn"
+          [disabled]="!hasSelectedNode()"
+          (click)="copyClicked.emit()"
+          title="複製選取項目"
+        >
+          📋 複製
+        </button>
+        <button
+          class="toolbar-btn paste-btn"
+          [disabled]="!canPaste()"
+          (click)="pasteClicked.emit()"
+          title="貼上至選取的目錄"
+        >
+          📌 貼上
+        </button>
+      </div>
+
+      <span class="toolbar-divider">|</span>
+
       <button
         class="toolbar-btn delete-btn"
         [disabled]="!hasSelectedNode()"
@@ -194,6 +215,24 @@ import type { CommandHistory } from '../../../services/behavioral/command-histor
         color: #fff;
       }
     }
+    .copy-btn {
+      background: #1a4a3a;
+      border-color: #2a7a5a;
+      color: #7adfb0;
+      &:hover:not(:disabled) {
+        background: #2a7a5a;
+        color: #fff;
+      }
+    }
+    .paste-btn {
+      background: #3a1a5c;
+      border-color: #5a2a8c;
+      color: #c8a0ff;
+      &:hover:not(:disabled) {
+        background: #5a2a8c;
+        color: #fff;
+      }
+    }
   `,
 })
 export class ToolbarComponent {
@@ -209,6 +248,9 @@ export class ToolbarComponent {
   /** 輸入：是否有選中的節點 */
   hasSelectedNode = input<boolean>(false);
 
+  /** 輸入：是否可以貼上（剪貼簿有內容 + 選中目錄） */
+  canPaste = input<boolean>(false);
+
   /** 輸入：各標籤的即時數量 */
   tagCounts = input<Record<TagType, number>>({} as Record<TagType, number>);
 
@@ -216,6 +258,8 @@ export class ToolbarComponent {
   sortClicked = output<SortType>();
   deleteClicked = output<void>();
   tagClicked = output<TagType>();
+  copyClicked = output<void>();
+  pasteClicked = output<void>();
   undoClicked = output<void>();
   redoClicked = output<void>();
 
