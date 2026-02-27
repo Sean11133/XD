@@ -6,7 +6,10 @@
 
 // --- Visitor Pattern ---
 export type { IVisitor } from './visitor.interface';
+export { BaseExportVisitor } from './base-export.visitor';
 export { XmlExportVisitor } from './xml-export.visitor';
+export { JsonExportVisitor } from './json-export.visitor';
+export { MarkdownExportVisitor } from './markdown-export.visitor';
 export { ExtensionSearchVisitor } from './extension-search.visitor';
 
 // --- Command Pattern ---

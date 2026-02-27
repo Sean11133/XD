@@ -1,23 +1,26 @@
-import type { Directory } from '../structural/directory.model';
-import type { ImageFile } from '../structural/image-file.model';
-import type { TextFile } from '../structural/text-file.model';
-import type { IVisitor } from './visitor.interface';
-import type { WordFile } from '../structural/word-file.model';
+import { BaseExportVisitor } from './base-export.visitor';
 
 /**
- * Visitor Pattern — Concrete Visitor
- * 遍歷檔案樹並產生 XML 格式字串
+ * Template Method Pattern — XML 匯出器
+ *
+ * 繼承 BaseExportVisitor，只實作 XML 格式的細節：
+ *   - escape：脫逸 XML 特殊字元（& < > " '）
+ *   - formatDirectoryStart / End：XML 開閉標籤
+ *   - formatFile：XML 自含標籤
+ *   - sanitizeTagName：處理非法 XML tag name
  */
-export class XmlExportVisitor implements IVisitor {
-  private xml = '';
-  private indentLevel = 0;
-
-  getResult(): string {
-    return this.xml;
-  }
-
-  private getIndent(): string {
-    return '  '.repeat(this.indentLevel);
+export class XmlExportVisitor extends BaseExportVisitor {
+  /**
+   * XML 字元脫逸
+   * 處理 XML 五大特殊字元：& < > " '
+   */
+  protected override escape(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
   }
 
   /**
@@ -27,38 +30,37 @@ export class XmlExportVisitor implements IVisitor {
    */
   private sanitizeTagName(name: string): string {
     let tagName = name.replace(/[^a-zA-Z0-9\u4e00-\u9fff_-]/g, '_');
-    // XML tag 不能以數字開頭，需加前綴
     if (/^[0-9]/.test(tagName)) {
       tagName = `_${tagName}`;
     }
-    // 移除連續底線與尾部底線
     tagName = tagName.replace(/_+/g, '_').replace(/_$/, '');
     return tagName || '_node';
   }
 
-  visitDirectory(dir: Directory): void {
-    const tagName = this.sanitizeTagName(dir.name);
-    this.xml += `${this.getIndent()}<${tagName}>\n`;
-    this.indentLevel++;
-    dir.children.forEach((child) => child.accept(this));
-    this.indentLevel--;
-    this.xml += `${this.getIndent()}</${tagName}>\n`;
-  }
-
-  visitWordFile(file: WordFile): void {
-    this.appendNode(file.name, file.getDetails().replace(/[()]/g, ''));
-  }
-
-  visitImageFile(file: ImageFile): void {
-    this.appendNode(file.name, file.getDetails().replace(/[()]/g, ''));
-  }
-
-  visitTextFile(file: TextFile): void {
-    this.appendNode(file.name, file.getDetails().replace(/[()]/g, ''));
-  }
-
-  private appendNode(name: string, content: string): void {
+  /**
+   * 目錄開始 → XML 開標籤
+   * 例如：<Root>
+   */
+  protected override formatDirectoryStart(name: string, _childCount: number): string {
     const tagName = this.sanitizeTagName(name);
-    this.xml += `${this.getIndent()}<${tagName}>${content}</${tagName}>\n`;
+    return `${this.indent()}<${tagName}>\n`;
+  }
+
+  /**
+   * 目錄結束 → XML 閉標籤
+   * 例如：</Root>
+   */
+  protected override formatDirectoryEnd(name: string): string {
+    const tagName = this.sanitizeTagName(name);
+    return `${this.indent()}</${tagName}>\n`;
+  }
+
+  /**
+   * 檔案節點 → XML 含內容標籤
+   * 例如：<README_txt>編碼: UTF-8, 大小: 0.5KB</README_txt>
+   */
+  protected override formatFile(name: string, details: string, _isLastChild: boolean): string {
+    const tagName = this.sanitizeTagName(name);
+    return `${this.indent()}<${tagName}>${details}</${tagName}>\n`;
   }
 }

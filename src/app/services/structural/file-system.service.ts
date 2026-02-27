@@ -5,6 +5,9 @@ import { FileSystemNode } from '../../models/structural/file-system-node.model';
 import { SearchSubjectService } from '../behavioral/search-subject.service';
 import { ExtensionSearchVisitor } from '../../models/behavioral/extension-search.visitor';
 import { XmlExportVisitor } from '../../models/behavioral/xml-export.visitor';
+import { JsonExportVisitor } from '../../models/behavioral/json-export.visitor';
+import { MarkdownExportVisitor } from '../../models/behavioral/markdown-export.visitor';
+import type { BaseExportVisitor } from '../../models/behavioral/base-export.visitor';
 import { FileFactory } from '../../models/creational/file.factory';
 
 /**
@@ -14,6 +17,9 @@ import { FileFactory } from '../../models/creational/file.factory';
  * 🏗 結構型模式（Structural Pattern）
  * 主要支援 Composite Pattern 的樹狀結構操作
  */
+/** 匯出格式類型 */
+export type ExportFormat = 'xml' | 'json' | 'markdown';
+
 @Injectable({ providedIn: 'root' })
 export class FileSystemService {
   private readonly searchSubject = inject(SearchSubjectService);
@@ -59,12 +65,52 @@ export class FileSystemService {
   }
 
   /**
-   * 匯出 XML（Visitor Pattern）
+   * 匯出 XML（Visitor + Template Method Pattern）
    */
   exportToXml(root: Directory): string {
     const visitor = new XmlExportVisitor();
     root.accept(visitor);
     return visitor.getResult();
+  }
+
+  /**
+   * 匯出 JSON（Visitor + Template Method Pattern）
+   */
+  exportToJson(root: Directory): string {
+    const visitor = new JsonExportVisitor();
+    root.accept(visitor);
+    return visitor.getResult();
+  }
+
+  /**
+   * 匯出 Markdown（Visitor + Template Method Pattern）
+   */
+  exportToMarkdown(root: Directory): string {
+    const visitor = new MarkdownExportVisitor();
+    root.accept(visitor);
+    return visitor.getResult();
+  }
+
+  /**
+   * 依格式匯出（Template Method Pattern — 多型呼叫）
+   * 所有匯出器共享相同骨架，只有格式細節不同
+   */
+  exportByFormat(root: Directory, format: ExportFormat): string {
+    const visitor = this.createExporter(format);
+    root.accept(visitor);
+    return visitor.getResult();
+  }
+
+  /** 工廠方法 — 依格式建立對應匯出器 */
+  private createExporter(format: ExportFormat): BaseExportVisitor {
+    switch (format) {
+      case 'xml':
+        return new XmlExportVisitor();
+      case 'json':
+        return new JsonExportVisitor();
+      case 'markdown':
+        return new MarkdownExportVisitor();
+    }
   }
 
   /**

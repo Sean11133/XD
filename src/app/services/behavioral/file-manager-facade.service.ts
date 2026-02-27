@@ -4,6 +4,7 @@ import type { FileSystemNode } from '../../models/structural/file-system-node.mo
 import { Directory } from '../../models/structural/directory.model';
 import type { TagType } from '../../models/structural/tag.model';
 import { FileSystemService } from '../structural/file-system.service';
+import type { ExportFormat } from '../structural/file-system.service';
 import { CommandHistory } from './command-history.service';
 import { SearchSubjectService } from './search-subject.service';
 import { ViewStateService } from './view-state.service';
@@ -94,6 +95,11 @@ export class FileManagerFacade {
   /** 匯出 XML */
   exportToXml(root: Directory): string {
     return this.fileSystem.exportToXml(root);
+  }
+
+  /** 依格式匯出（Template Method Pattern — 多型呼叫） */
+  exportByFormat(root: Directory, format: ExportFormat): string {
+    return this.fileSystem.exportByFormat(root, format);
   }
 
   /** 依副檔名搜尋 */

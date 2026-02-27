@@ -8,3 +8,4 @@
 // ==========================================
 
 export { FileSystemService } from './file-system.service';
+export type { ExportFormat } from './file-system.service';
