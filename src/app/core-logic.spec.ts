@@ -14,6 +14,9 @@ import { ExtensionSearchVisitor } from './models/behavioral/extension-search.vis
 import { SortCommand } from './models/behavioral/sort.command';
 import { DeleteCommand } from './models/behavioral/delete.command';
 import { TagCommand } from './models/behavioral/tag.command';
+import { CopyCommand } from './models/behavioral/copy.command';
+import { PasteCommand } from './models/behavioral/paste.command';
+import { Clipboard } from './models/creational/clipboard.singleton';
 import { SortByNameStrategy } from './models/behavioral/sort-by-name.strategy';
 import { SortBySizeStrategy } from './models/behavioral/sort-by-size.strategy';
 import { SortByExtensionStrategy } from './models/behavioral/sort-by-extension.strategy';
@@ -892,5 +895,310 @@ describe('Adapter Pattern — SearchEventAdapter', () => {
     // 透過 IDashboardDisplay 介面取得轉換後的資料
     expect(adapter.getVisitedCount()).toBe(1);
     expect(adapter.getProgress()).toBe(10);
+  });
+});
+
+// ─── FileSystemNode.clone() — 深拷貝 ───
+
+describe('FileSystemNode.clone() — 深拷貝', () => {
+  it('should clone WordFile with new id', () => {
+    const original = new WordFile('doc.docx', 500, 15);
+    original.tags.add(TagType.Urgent);
+    const copy = original.clone();
+
+    expect(copy).toBeInstanceOf(WordFile);
+    expect(copy.name).toBe('doc.docx');
+    expect(copy.sizeKB).toBe(500);
+    expect((copy as WordFile).pages).toBe(15);
+    expect(copy.tags.has(TagType.Urgent)).toBe(true);
+    expect(copy.id).not.toBe(original.id);
+  });
+
+  it('should clone ImageFile with all properties', () => {
+    const original = new ImageFile('pic.png', 2048, 1920, 1080);
+    const copy = original.clone();
+
+    expect(copy).toBeInstanceOf(ImageFile);
+    expect((copy as ImageFile).width).toBe(1920);
+    expect((copy as ImageFile).height).toBe(1080);
+    expect(copy.id).not.toBe(original.id);
+  });
+
+  it('should clone TextFile with encoding', () => {
+    const original = new TextFile('readme.txt', 10, 'UTF-8');
+    const copy = original.clone();
+
+    expect(copy).toBeInstanceOf(TextFile);
+    expect((copy as TextFile).encoding).toBe('UTF-8');
+    expect(copy.id).not.toBe(original.id);
+  });
+
+  it('should deep clone Directory and all children', () => {
+    const root = new Directory('root');
+    const sub = new Directory('sub');
+    sub.add(new WordFile('a.docx', 100, 5));
+    sub.add(new TextFile('b.txt', 50, 'UTF-8'));
+    root.add(sub);
+    root.add(new ImageFile('c.png', 200, 800, 600));
+
+    const copy = root.clone() as Directory;
+
+    expect(copy.name).toBe('root');
+    expect(copy.id).not.toBe(root.id);
+    expect(copy.children).toHaveLength(2);
+
+    const subCopy = copy.children[0] as Directory;
+    expect(subCopy.id).not.toBe(sub.id);
+    expect(subCopy.children).toHaveLength(2);
+
+    // 修改 copy 不影響 original
+    subCopy.children.pop();
+    expect(sub.children).toHaveLength(2);
+  });
+
+  it('should clone tags (independent Set)', () => {
+    const original = new WordFile('doc.docx', 100, 5);
+    original.tags.add(TagType.Work);
+    const copy = original.clone();
+
+    copy.tags.add(TagType.Urgent);
+    expect(original.tags.has(TagType.Urgent)).toBe(false);
+  });
+});
+
+// ─── Singleton Pattern：Clipboard ───
+
+describe('Singleton Pattern — Clipboard', () => {
+  beforeEach(() => {
+    Clipboard.resetInstance();
+  });
+
+  it('should return the same instance', () => {
+    const a = Clipboard.getInstance();
+    const b = Clipboard.getInstance();
+    expect(a).toBe(b);
+  });
+
+  it('should start with no content', () => {
+    const clipboard = Clipboard.getInstance();
+    expect(clipboard.hasContent()).toBe(false);
+    expect(clipboard.paste()).toBeNull();
+    expect(clipboard.getSourceName()).toBeNull();
+  });
+
+  it('should copy a node and store deep clone', () => {
+    const clipboard = Clipboard.getInstance();
+    const file = new WordFile('report.docx', 500, 15);
+
+    clipboard.copy(file);
+    expect(clipboard.hasContent()).toBe(true);
+    expect(clipboard.getSourceName()).toBe('report.docx');
+  });
+
+  it('should paste a deep copy (different id)', () => {
+    const clipboard = Clipboard.getInstance();
+    const file = new WordFile('report.docx', 500, 15);
+    clipboard.copy(file);
+
+    const pasted = clipboard.paste();
+    expect(pasted).not.toBeNull();
+    expect(pasted!.name).toBe('report.docx');
+    expect(pasted!.id).not.toBe(file.id);
+  });
+
+  it('should allow multiple pastes (clipboard not consumed)', () => {
+    const clipboard = Clipboard.getInstance();
+    clipboard.copy(new TextFile('note.txt', 10, 'UTF-8'));
+
+    const paste1 = clipboard.paste();
+    const paste2 = clipboard.paste();
+
+    expect(paste1).not.toBeNull();
+    expect(paste2).not.toBeNull();
+    expect(paste1!.id).not.toBe(paste2!.id);
+  });
+
+  it('should clear clipboard', () => {
+    const clipboard = Clipboard.getInstance();
+    clipboard.copy(new TextFile('a.txt', 1, 'UTF-8'));
+    clipboard.clear();
+
+    expect(clipboard.hasContent()).toBe(false);
+    expect(clipboard.getSourceName()).toBeNull();
+  });
+
+  it('should reset instance for testing', () => {
+    const before = Clipboard.getInstance();
+    Clipboard.resetInstance();
+    const after = Clipboard.getInstance();
+    expect(before).not.toBe(after);
+  });
+});
+
+// ─── Command Pattern：CopyCommand ───
+
+describe('CopyCommand — 複製命令', () => {
+  beforeEach(() => {
+    Clipboard.resetInstance();
+  });
+
+  it('should copy node to clipboard on execute', () => {
+    const file = new WordFile('doc.docx', 500, 15);
+    const cmd = new CopyCommand(file);
+
+    cmd.execute();
+    const clipboard = Clipboard.getInstance();
+    expect(clipboard.hasContent()).toBe(true);
+    expect(clipboard.getSourceName()).toBe('doc.docx');
+  });
+
+  it('should restore previous clipboard on undo', () => {
+    const clipboard = Clipboard.getInstance();
+    const first = new TextFile('first.txt', 10, 'UTF-8');
+    const second = new WordFile('second.docx', 200, 10);
+
+    clipboard.copy(first);
+    expect(clipboard.getSourceName()).toBe('first.txt');
+
+    const cmd = new CopyCommand(second);
+    cmd.execute();
+    expect(clipboard.getSourceName()).toBe('second.docx');
+
+    cmd.undo();
+    expect(clipboard.hasContent()).toBe(true);
+    expect(clipboard.getSourceName()).toBe('first.txt');
+  });
+
+  it('should clear clipboard on undo when it was empty before', () => {
+    const file = new WordFile('doc.docx', 100, 5);
+    const cmd = new CopyCommand(file);
+
+    cmd.execute();
+    cmd.undo();
+
+    const clipboard = Clipboard.getInstance();
+    expect(clipboard.hasContent()).toBe(false);
+  });
+
+  it('should have correct description', () => {
+    const file = new TextFile('readme.txt', 5, 'UTF-8');
+    const cmd = new CopyCommand(file);
+    expect(cmd.description).toBe('複製：readme.txt');
+  });
+});
+
+// ─── Command Pattern：PasteCommand ───
+
+describe('PasteCommand — 貼上命令', () => {
+  beforeEach(() => {
+    Clipboard.resetInstance();
+  });
+
+  it('should paste node into target directory on execute', () => {
+    const clipboard = Clipboard.getInstance();
+    clipboard.copy(new WordFile('doc.docx', 500, 15));
+
+    const targetDir = new Directory('dest');
+    const cmd = new PasteCommand(targetDir);
+    cmd.execute();
+
+    expect(targetDir.children).toHaveLength(1);
+    expect(targetDir.children[0].name).toBe('doc.docx');
+  });
+
+  it('should remove pasted node on undo', () => {
+    const clipboard = Clipboard.getInstance();
+    clipboard.copy(new TextFile('note.txt', 10, 'UTF-8'));
+
+    const targetDir = new Directory('dest');
+    const cmd = new PasteCommand(targetDir);
+    cmd.execute();
+    expect(targetDir.children).toHaveLength(1);
+
+    cmd.undo();
+    expect(targetDir.children).toHaveLength(0);
+  });
+
+  it('should throw when clipboard is empty', () => {
+    const targetDir = new Directory('dest');
+    const cmd = new PasteCommand(targetDir);
+    expect(() => cmd.execute()).toThrow('剪貼簿為空');
+  });
+
+  it('should paste different instances each time', () => {
+    const clipboard = Clipboard.getInstance();
+    clipboard.copy(new WordFile('doc.docx', 500, 15));
+
+    const dir = new Directory('dest');
+    const cmd1 = new PasteCommand(dir);
+    cmd1.execute();
+
+    const cmd2 = new PasteCommand(dir);
+    cmd2.execute();
+
+    expect(dir.children).toHaveLength(2);
+    expect(dir.children[0].id).not.toBe(dir.children[1].id);
+  });
+
+  it('should have correct description', () => {
+    const clipboard = Clipboard.getInstance();
+    clipboard.copy(new WordFile('doc.docx', 500, 15));
+
+    const dir = new Directory('dest');
+    const cmd = new PasteCommand(dir);
+    expect(cmd.description).toBe('貼上：doc.docx → dest');
+  });
+});
+
+// ─── CopyCommand + PasteCommand 整合 CommandHistory ───
+
+describe('CopyCommand + PasteCommand — 與 CommandHistory 整合', () => {
+  let history: CommandHistory;
+
+  beforeEach(() => {
+    history = new CommandHistory();
+    Clipboard.resetInstance();
+  });
+
+  it('should support copy → paste → undo paste → undo copy flow', () => {
+    const root = new Directory('root');
+    const file = new WordFile('doc.docx', 500, 15);
+    root.add(file);
+
+    const targetDir = new Directory('dest');
+    root.add(targetDir);
+
+    // 1. Copy
+    const copyCmd = new CopyCommand(file);
+    history.executeCommand(copyCmd);
+    expect(Clipboard.getInstance().hasContent()).toBe(true);
+
+    // 2. Paste
+    const pasteCmd = new PasteCommand(targetDir);
+    history.executeCommand(pasteCmd);
+    expect(targetDir.children).toHaveLength(1);
+
+    // 3. Undo paste
+    history.undo();
+    expect(targetDir.children).toHaveLength(0);
+
+    // 4. Undo copy
+    history.undo();
+    expect(Clipboard.getInstance().hasContent()).toBe(false);
+  });
+
+  it('should support redo after undo', () => {
+    const file = new TextFile('note.txt', 10, 'UTF-8');
+    const targetDir = new Directory('dest');
+
+    history.executeCommand(new CopyCommand(file));
+    history.executeCommand(new PasteCommand(targetDir));
+    expect(targetDir.children).toHaveLength(1);
+
+    history.undo();
+    expect(targetDir.children).toHaveLength(0);
+
+    history.redo();
+    expect(targetDir.children).toHaveLength(1);
   });
 });
