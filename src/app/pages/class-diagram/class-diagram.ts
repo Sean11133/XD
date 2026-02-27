@@ -249,19 +249,24 @@ classDiagram
     +message: string
   }
   class ConsoleObserver {
-    <<Observer>>
+    <<Observer + Decorator>>
     -logs: string[]
     +update(event) void
     +getLogs() string[]
     +getOutput() string
     +clear() void
   }
-  class DashboardObserver {
-    <<Observer>>
-    -stats: DashboardStats
+  class SearchEventAdapter {
+    <<Observer + Adapter>>
+    -visited: number
+    -matched: number
+    -complete: boolean
     +update(event) void
-    +getStats() DashboardStats
-    +reset() void
+    +getProgress() number
+    +getVisitedCount() number
+    +getMatchedCount() number
+    +isSearchComplete() boolean
+    +getSummary() string
   }
   class DemoComponent {
     <<Angular Observer>>
@@ -271,10 +276,107 @@ classDiagram
 
   ISubject~T~ <|.. SearchSubjectService : implements
   IObserver~T~ <|.. ConsoleObserver : implements
-  IObserver~T~ <|.. DashboardObserver : implements
+  IObserver~T~ <|.. SearchEventAdapter : implements
   SearchSubjectService --> SearchEvent : emits
   SearchSubjectService --> IObserver~T~ : notifies
   DemoComponent --> SearchSubjectService : subscribes(RxJS)
+  ConsoleObserver ..> decorateLogEntry : 使用 Decorator 工廠
+  SearchEventAdapter ..|> IDashboardDisplay : implements
+`;
+
+  readonly decoratorDiagram = `
+classDiagram
+  class ILogEntry {
+    <<interface>>
+    +render() string
+  }
+  class PlainLogEntry {
+    <<ConcreteComponent>>
+    -message: string
+    +render() string
+    -escapeHtml(text) string
+  }
+  class LogDecorator {
+    <<abstract Decorator>>
+    #wrapped: ILogEntry
+    +render()* string
+  }
+  class IconDecorator {
+    <<ConcreteDecorator>>
+    -icon: string
+    +render() string
+  }
+  class ColorDecorator {
+    <<ConcreteDecorator>>
+    -colorClass: string
+    +render() string
+  }
+  class BoldDecorator {
+    <<ConcreteDecorator>>
+    +render() string
+  }
+  class decorateLogEntry {
+    <<Factory Function>>
+    +decorateLogEntry(message, category?) ILogEntry
+    +detectLogCategory(message) LogCategory
+  }
+
+  ILogEntry <|.. PlainLogEntry
+  ILogEntry <|.. LogDecorator
+  LogDecorator <|-- IconDecorator
+  LogDecorator <|-- ColorDecorator
+  LogDecorator <|-- BoldDecorator
+  LogDecorator o-- ILogEntry : wrapped
+  decorateLogEntry ..> PlainLogEntry : creates
+  decorateLogEntry ..> IconDecorator : creates
+  decorateLogEntry ..> ColorDecorator : creates
+  decorateLogEntry ..> BoldDecorator : creates
+`;
+
+  readonly adapterDiagram = `
+classDiagram
+  class IDashboardDisplay {
+    <<Target Interface>>
+    +getProgress() number
+    +getVisitedCount() number
+    +getMatchedCount() number
+    +isSearchComplete() boolean
+    +getCurrentNodeName() string
+    +getSummary() string
+  }
+  class IObserver~T~ {
+    <<Adaptee Interface>>
+    +update(event: T) void
+  }
+  class SearchEventAdapter {
+    <<Adapter>>
+    -visited: number
+    -matched: number
+    -complete: boolean
+    -expectedTotal: number
+    +update(event) void
+    +getProgress() number
+    +getVisitedCount() number
+    +getMatchedCount() number
+    +isSearchComplete() boolean
+    +getCurrentNodeName() string
+    +getSummary() string
+    +setExpectedTotal(total) void
+    +reset() void
+  }
+  class DashboardPanelComponent {
+    <<Client>>
+    +adapter: IDashboardDisplay
+  }
+  class SearchSubjectService {
+    <<Subject>>
+    +notify(event) void
+  }
+
+  IDashboardDisplay <|.. SearchEventAdapter : implements
+  IObserver~T~ <|.. SearchEventAdapter : implements
+  DashboardPanelComponent --> IDashboardDisplay : 依賴目標介面
+  SearchSubjectService --> SearchEventAdapter : notify(SearchEvent)
 `;
 
   /** ER Diagram — 資料庫 Table Schema */

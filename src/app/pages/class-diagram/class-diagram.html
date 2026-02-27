@@ -175,8 +175,51 @@
         <div class="pattern-note">
           <strong>🔑 Observer Pattern 角色：</strong>
           <code>SearchSubjectService</code> = Subject（被觀察者，用 RxJS Subject 實作）|
-          <code>DemoComponent</code> = Observer（觀察者，subscribe 事件流）|
-          <code>SearchEvent</code> = Event Model
+          <code>ConsoleObserver</code> = Observer（整合 Decorator 裝飾日誌）|
+          <code>SearchEventAdapter</code> = Observer + Adapter（轉換介面給 Dashboard）|
+          <code>DemoComponent</code> = Observer（subscribe 事件流更新 UI 高亮）
+        </div>
+      }
+    </div>
+
+    <!-- Decorator Pattern -->
+    <div class="pattern-group">
+      <div class="pattern-header" (click)="toggleGroup('decorator')">
+        <span class="toggle-icon">{{ expandedGroup() === 'decorator' ? '▼' : '▶' }}</span>
+        <span class="pattern-label">Decorator Pattern — 裝飾器</span>
+      </div>
+      @if (expandedGroup() === 'decorator') {
+        <div class="diagram-container">
+          <app-mermaid-diagram [definition]="decoratorDiagram" />
+        </div>
+
+        <div class="pattern-note">
+          <strong>🔑 Decorator Pattern 角色：</strong>
+          <code>ILogEntry</code> = Component 介面 | <code>PlainLogEntry</code> = Concrete
+          Component（純文字，HTML 跳脫）| <code>LogDecorator</code> = Decorator 基類（持有 wrapped
+          參考）| <code>IconDecorator / ColorDecorator / BoldDecorator</code> = Concrete Decorator |
+          <code>decorateLogEntry()</code> = 工廠函式，依關鍵字自動組裝裝飾器鏈
+        </div>
+      }
+    </div>
+
+    <!-- Adapter Pattern -->
+    <div class="pattern-group">
+      <div class="pattern-header" (click)="toggleGroup('adapter')">
+        <span class="toggle-icon">{{ expandedGroup() === 'adapter' ? '▼' : '▶' }}</span>
+        <span class="pattern-label">Adapter Pattern — 適配器</span>
+      </div>
+      @if (expandedGroup() === 'adapter') {
+        <div class="diagram-container">
+          <app-mermaid-diagram [definition]="adapterDiagram" />
+        </div>
+
+        <div class="pattern-note">
+          <strong>🔑 Adapter Pattern 角色：</strong>
+          <code>IDashboardDisplay</code> = Target Interface（Dashboard 元件期望的資料格式）|
+          <code>IObserver&lt;SearchEvent&gt;</code> = Adaptee Interface（Subject 發出的事件流）|
+          <code>SearchEventAdapter</code> = Adapter（同時實作兩邊介面，內部做轉換）|
+          <code>DashboardPanelComponent</code> = Client（只依賴 Target Interface）
         </div>
       }
     </div>
