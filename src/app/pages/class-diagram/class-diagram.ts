@@ -179,13 +179,39 @@ classDiagram
     +execute() void
     +undo() void
   }
+  class CopyCommand {
+    -node: FileSystemNode
+    -previousContent: FileSystemNode
+    +execute() void
+    +undo() void
+  }
+  class PasteCommand {
+    -targetDir: Directory
+    -pastedNode: FileSystemNode
+    +execute() void
+    +undo() void
+  }
+  class Clipboard {
+    <<Singleton>>
+    -instance$: Clipboard
+    -content: FileSystemNode
+    +getInstance()$ Clipboard
+    +copy(node) string
+    +paste() FileSystemNode
+    +hasContent() boolean
+    +clear() void
+  }
 
   ICommand <|.. SortCommand
   ICommand <|.. DeleteCommand
   ICommand <|.. TagCommand
   ICommand <|.. RestoreSortCommand
+  ICommand <|.. CopyCommand
+  ICommand <|.. PasteCommand
   CommandHistory --> ICommand : executes
   SortCommand --> ISortStrategy : uses
+  CopyCommand --> Clipboard : uses
+  PasteCommand --> Clipboard : uses
 `;
 
   readonly strategyDiagram = `
@@ -377,6 +403,50 @@ classDiagram
   IObserver~T~ <|.. SearchEventAdapter : implements
   DashboardPanelComponent --> IDashboardDisplay : 依賴目標介面
   SearchSubjectService --> SearchEventAdapter : notify(SearchEvent)
+`;
+
+  readonly singletonDiagram = `
+classDiagram
+  class Clipboard {
+    <<Singleton>>
+    -instance$: Clipboard
+    -content: FileSystemNode
+    -sourceName: string
+    -constructor()
+    +getInstance()$ Clipboard
+    +copy(node) string
+    +paste() FileSystemNode
+    +hasContent() boolean
+    +getSourceName() string
+    +clear() void
+    +resetInstance()$ void
+  }
+  class CopyCommand {
+    <<uses Singleton>>
+    -node: FileSystemNode
+    +execute() void
+    +undo() void
+  }
+  class PasteCommand {
+    <<uses Singleton>>
+    -targetDir: Directory
+    +execute() void
+    +undo() void
+  }
+  class FileManagerFacade {
+    <<Client>>
+    +copyNode(node) string
+    +pasteNode(dir) string
+    +getClipboard() Clipboard
+  }
+
+  Clipboard ..> Clipboard : getInstance()
+  CopyCommand --> Clipboard : 存入剪貼簿
+  PasteCommand --> Clipboard : 取出剪貼簿
+  FileManagerFacade --> Clipboard : 查詢 hasContent()
+  FileManagerFacade --> CopyCommand : creates
+  FileManagerFacade --> PasteCommand : creates
+  note for Clipboard "private constructor\\n確保全域唯一實例"
 `;
 
   /** ER Diagram — 資料庫 Table Schema */

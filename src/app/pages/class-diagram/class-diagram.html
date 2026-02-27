@@ -135,9 +135,13 @@
         <div class="pattern-note">
           <strong>🔑 Command Pattern 角色：</strong>
           <code>ICommand</code> = Command 介面 |
-          <code>SortCommand / DeleteCommand / TagCommand / RestoreSortCommand</code> = Concrete
-          Command | <code>CommandHistory</code> = Invoker（管理 Undo/Redo 堆疊）|
-          <code>FileManagerFacade</code> = Client（建立命令）
+          <code
+            >SortCommand / DeleteCommand / TagCommand / CopyCommand / PasteCommand /
+            RestoreSortCommand</code
+          >
+          = Concrete Command | <code>CommandHistory</code> = Invoker（管理 Undo/Redo 堆疊）|
+          <code>FileManagerFacade</code> = Client（建立命令）|
+          <code>CopyCommand / PasteCommand</code> 使用 <code>Clipboard</code> Singleton
         </div>
       }
     </div>
@@ -220,6 +224,27 @@
           <code>IObserver&lt;SearchEvent&gt;</code> = Adaptee Interface（Subject 發出的事件流）|
           <code>SearchEventAdapter</code> = Adapter（同時實作兩邊介面，內部做轉換）|
           <code>DashboardPanelComponent</code> = Client（只依賴 Target Interface）
+        </div>
+      }
+    </div>
+
+    <!-- Singleton Pattern -->
+    <div class="pattern-group">
+      <div class="pattern-header" (click)="toggleGroup('singleton')">
+        <span class="toggle-icon">{{ expandedGroup() === 'singleton' ? '▼' : '▶' }}</span>
+        <span class="pattern-label">Singleton Pattern — 單例（剪貼簿）</span>
+      </div>
+      @if (expandedGroup() === 'singleton') {
+        <div class="diagram-container">
+          <app-mermaid-diagram [definition]="singletonDiagram" />
+        </div>
+
+        <div class="pattern-note">
+          <strong>🔑 Singleton Pattern 角色：</strong>
+          <code>Clipboard</code> = Singleton（private constructor + static getInstance()）|
+          <code>CopyCommand</code> = Client（將選取的節點深拷貝至剪貼簿）|
+          <code>PasteCommand</code> = Client（從剪貼簿取出副本，貼入目標目錄）|
+          <code>FileManagerFacade</code> = Client（封裝 Copy/Paste 操作供元件呼叫）
         </div>
       }
     </div>
