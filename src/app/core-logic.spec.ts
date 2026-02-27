@@ -23,6 +23,14 @@ import { ConsoleObserver } from './models/behavioral/console.observer';
 import { DashboardObserver } from './models/behavioral/dashboard.observer';
 import type { IObserver, ISubject } from './models/behavioral/observer.interface';
 import type { SearchEvent } from './models/behavioral/search-event.model';
+import {
+  PlainLogEntry,
+  IconDecorator,
+  ColorDecorator,
+  BoldDecorator,
+} from './models/structural/log-entry.decorator';
+import { decorateLogEntry, detectLogCategory } from './models/structural/log-decorator.factory';
+import { SearchEventAdapter } from './models/structural/search-event.adapter';
 
 // ==========================================
 // 單元測試 — 核心邏輯（不依賴 DOM / Angular）
@@ -486,25 +494,33 @@ describe('SortByTagStrategy', () => {
 
 // ─── Observer Pattern：GoF Subject / Observer ───
 
-describe('Observer Pattern — ConsoleObserver', () => {
+describe('Observer Pattern — ConsoleObserver（整合 Decorator Pattern）', () => {
   let observer: ConsoleObserver;
 
   beforeEach(() => {
     observer = new ConsoleObserver();
   });
 
-  it('should accumulate log messages on update', () => {
+  it('should accumulate decorated HTML log on update', () => {
     observer.update({ type: 'visiting', message: '📂 進入目錄: docs' });
     observer.update({ type: 'matched', message: '✅ 匹配: report.docx' });
 
-    expect(observer.getLogs()).toEqual(['📂 進入目錄: docs', '✅ 匹配: report.docx']);
+    const logs = observer.getLogs();
+    expect(logs).toHaveLength(2);
+    // visiting → 🔍 + dim 色
+    expect(logs[0]).toContain('🔍');
+    expect(logs[0]).toContain('log-dim');
+    // matched → ✅ + green 色 + bold
+    expect(logs[1]).toContain('✅');
+    expect(logs[1]).toContain('log-green');
+    expect(logs[1]).toContain('<strong>');
   });
 
-  it('should return joined output string', () => {
+  it('should join output with <br> separator', () => {
     observer.update({ type: 'visiting', message: 'A' });
     observer.update({ type: 'visiting', message: 'B' });
 
-    expect(observer.getOutput()).toBe('A\nB');
+    expect(observer.getOutput()).toContain('<br>');
   });
 
   it('should clear logs', () => {
@@ -632,7 +648,8 @@ describe('Observer Pattern — Subject attach/detach/notify', () => {
     subject.detach(observer);
     subject.notify({ type: 'visiting', message: 'second' });
 
-    expect(observer.getLogs()).toEqual(['first']);
+    // ConsoleObserver 現在產出 HTML，只驗證長度
+    expect(observer.getLogs()).toHaveLength(1);
   });
 
   it('should support mixed observer types independently', () => {
@@ -657,5 +674,223 @@ describe('Observer Pattern — Subject attach/detach/notify', () => {
     expect(stats.totalVisited).toBe(3); // 2 visiting + 1 matched
     expect(stats.totalMatched).toBe(1);
     expect(stats.isComplete).toBe(true);
+  });
+});
+
+// ─── Decorator Pattern：日誌裝飾器 ───
+
+describe('Decorator Pattern — PlainLogEntry', () => {
+  it('should render plain text', () => {
+    const entry = new PlainLogEntry('Hello World');
+    expect(entry.render()).toBe('Hello World');
+  });
+
+  it('should escape HTML special characters', () => {
+    const entry = new PlainLogEntry('<script>alert("XSS")</script>');
+    expect(entry.render()).toBe('&lt;script&gt;alert("XSS")&lt;/script&gt;');
+  });
+
+  it('should escape ampersand', () => {
+    const entry = new PlainLogEntry('A & B');
+    expect(entry.render()).toBe('A &amp; B');
+  });
+});
+
+describe('Decorator Pattern — IconDecorator', () => {
+  it('should prepend icon to rendered output', () => {
+    const plain = new PlainLogEntry('test');
+    const decorated = new IconDecorator(plain, '🔍');
+    expect(decorated.render()).toBe('<span class="log-icon">🔍</span> test');
+  });
+});
+
+describe('Decorator Pattern — ColorDecorator', () => {
+  it('should wrap output with color class', () => {
+    const plain = new PlainLogEntry('test');
+    const decorated = new ColorDecorator(plain, 'green');
+    expect(decorated.render()).toBe('<span class="log-green">test</span>');
+  });
+});
+
+describe('Decorator Pattern — BoldDecorator', () => {
+  it('should wrap output with strong tag', () => {
+    const plain = new PlainLogEntry('important');
+    const decorated = new BoldDecorator(plain);
+    expect(decorated.render()).toBe('<strong>important</strong>');
+  });
+});
+
+describe('Decorator Pattern — 裝飾器鏈組合', () => {
+  it('should chain Color → Bold → Icon correctly', () => {
+    let entry = new PlainLogEntry('匹配: report.docx');
+    entry = new ColorDecorator(entry, 'green');
+    entry = new BoldDecorator(entry);
+    entry = new IconDecorator(entry, '✅');
+
+    const result = entry.render();
+    expect(result).toContain('✅');
+    expect(result).toContain('log-green');
+    expect(result).toContain('<strong>');
+    expect(result).toContain('匹配: report.docx');
+  });
+});
+
+describe('Decorator Pattern — detectLogCategory', () => {
+  it('should detect matched keywords', () => {
+    expect(detectLogCategory('✅ 匹配: a.docx')).toBe('matched');
+    expect(detectLogCategory('MATCH found')).toBe('matched');
+  });
+
+  it('should detect complete keywords', () => {
+    expect(detectLogCategory('🏁 搜尋完成')).toBe('complete');
+    expect(detectLogCategory('搜尋完成了')).toBe('complete');
+  });
+
+  it('should detect visiting keywords', () => {
+    expect(detectLogCategory('📂 進入目錄: docs')).toBe('visiting');
+    expect(detectLogCategory('🔎 檢查: a.txt')).toBe('visiting');
+  });
+
+  it('should detect command keywords', () => {
+    expect(detectLogCategory('[Command] 排序已執行')).toBe('command');
+    expect(detectLogCategory('撤銷操作')).toBe('command');
+  });
+
+  it('should detect system keywords', () => {
+    expect(detectLogCategory('[System] 計算總容量')).toBe('system');
+    expect(detectLogCategory('匯出結果')).toBe('system');
+  });
+
+  it('should default to "default" for unrecognized messages', () => {
+    expect(detectLogCategory('Hello World')).toBe('default');
+  });
+});
+
+describe('Decorator Pattern — decorateLogEntry 工廠', () => {
+  it('should auto-decorate visiting messages with dim color and search icon', () => {
+    const entry = decorateLogEntry('📂 進入目錄: docs', 'visiting');
+    const html = entry.render();
+    expect(html).toContain('🔍');
+    expect(html).toContain('log-dim');
+    expect(html).not.toContain('<strong>');
+  });
+
+  it('should auto-decorate matched messages with green + bold + icon', () => {
+    const entry = decorateLogEntry('✅ 匹配: report.docx', 'matched');
+    const html = entry.render();
+    expect(html).toContain('✅');
+    expect(html).toContain('log-green');
+    expect(html).toContain('<strong>');
+  });
+
+  it('should auto-decorate complete messages with cyan + bold', () => {
+    const entry = decorateLogEntry('🏁 搜尋完成', 'complete');
+    const html = entry.render();
+    expect(html).toContain('🏁');
+    expect(html).toContain('log-cyan');
+    expect(html).toContain('<strong>');
+  });
+
+  it('should auto-detect category when not provided', () => {
+    const entry = decorateLogEntry('[System] 計算總容量...');
+    const html = entry.render();
+    expect(html).toContain('⚙️');
+    expect(html).toContain('log-blue');
+  });
+});
+
+// ─── Adapter Pattern：SearchEventAdapter ───
+
+describe('Adapter Pattern — SearchEventAdapter', () => {
+  let adapter: SearchEventAdapter;
+
+  beforeEach(() => {
+    adapter = new SearchEventAdapter(10);
+  });
+
+  it('should start with 0% progress', () => {
+    expect(adapter.getProgress()).toBe(0);
+    expect(adapter.getVisitedCount()).toBe(0);
+    expect(adapter.getMatchedCount()).toBe(0);
+    expect(adapter.isSearchComplete()).toBe(false);
+  });
+
+  it('should track visiting events', () => {
+    adapter.update({ type: 'visiting', message: '📂 進入目錄: docs' });
+    expect(adapter.getVisitedCount()).toBe(1);
+    expect(adapter.getProgress()).toBe(10); // 1/10 = 10%
+  });
+
+  it('should track matched events (counts as visited too)', () => {
+    adapter.update({ type: 'matched', message: '✅ 匹配: a.docx' });
+    expect(adapter.getVisitedCount()).toBe(1);
+    expect(adapter.getMatchedCount()).toBe(1);
+  });
+
+  it('should calculate progress percentage correctly', () => {
+    adapter.setExpectedTotal(4);
+    adapter.update({ type: 'visiting', message: 'a' });
+    adapter.update({ type: 'visiting', message: 'b' });
+    expect(adapter.getProgress()).toBe(50); // 2/4 = 50%
+  });
+
+  it('should cap progress at 99% before completion', () => {
+    adapter.setExpectedTotal(2);
+    adapter.update({ type: 'visiting', message: 'a' });
+    adapter.update({ type: 'visiting', message: 'b' });
+    adapter.update({ type: 'visiting', message: 'c' }); // 超過預估
+    expect(adapter.getProgress()).toBe(99);
+  });
+
+  it('should set progress to 100% on complete', () => {
+    adapter.update({ type: 'visiting', message: 'a' });
+    adapter.update({ type: 'complete', message: '🏁 完成' });
+    expect(adapter.getProgress()).toBe(100);
+    expect(adapter.isSearchComplete()).toBe(true);
+  });
+
+  it('should track currentNodeName from visiting events', () => {
+    const node = new WordFile('report.docx', 100, 5);
+    adapter.update({ type: 'visiting', message: '檢查', node });
+    expect(adapter.getCurrentNodeName()).toBe('report.docx');
+  });
+
+  it('should clear currentNodeName on complete', () => {
+    const node = new WordFile('report.docx', 100, 5);
+    adapter.update({ type: 'visiting', message: '檢查', node });
+    adapter.update({ type: 'complete', message: '🏁 完成' });
+    expect(adapter.getCurrentNodeName()).toBeNull();
+  });
+
+  it('should provide summary text', () => {
+    adapter.update({ type: 'visiting', message: 'a' });
+    adapter.update({ type: 'matched', message: 'b' });
+    adapter.update({ type: 'complete', message: '完成' });
+
+    const summary = adapter.getSummary();
+    expect(summary).toContain('搜尋完成');
+    expect(summary).toContain('2');
+    expect(summary).toContain('1');
+  });
+
+  it('should reset all state', () => {
+    adapter.update({ type: 'visiting', message: 'a' });
+    adapter.update({ type: 'matched', message: 'b' });
+    adapter.reset();
+
+    expect(adapter.getVisitedCount()).toBe(0);
+    expect(adapter.getMatchedCount()).toBe(0);
+    expect(adapter.isSearchComplete()).toBe(false);
+    expect(adapter.getProgress()).toBe(0);
+  });
+
+  it('should implement both IObserver and IDashboardDisplay', () => {
+    // 驗證 Adapter 同時扮演 Observer + Target 角色
+    const asObserver: IObserver<SearchEvent> = adapter;
+    asObserver.update({ type: 'visiting', message: 'test' });
+
+    // 透過 IDashboardDisplay 介面取得轉換後的資料
+    expect(adapter.getVisitedCount()).toBe(1);
+    expect(adapter.getProgress()).toBe(10);
   });
 });
