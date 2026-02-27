@@ -13,6 +13,9 @@ import { RestoreSortCommand } from '../../models/behavioral/restore-sort.command
 import { DeleteCommand } from '../../models/behavioral/delete.command';
 import { TagCommand } from '../../models/behavioral/tag.command';
 import type { TagAction } from '../../models/behavioral/tag.command';
+import { CopyCommand } from '../../models/behavioral/copy.command';
+import { PasteCommand } from '../../models/behavioral/paste.command';
+import { Clipboard } from '../../models/creational/clipboard.singleton';
 import { SortByNameStrategy } from '../../models/behavioral/sort-by-name.strategy';
 import { SortBySizeStrategy } from '../../models/behavioral/sort-by-size.strategy';
 import { SortByExtensionStrategy } from '../../models/behavioral/sort-by-extension.strategy';
@@ -85,6 +88,28 @@ export class FileManagerFacade {
     const command = new TagCommand(node, tag, action);
     this.commandHistory.executeCommand(command);
     return command.description;
+  }
+
+  /** 複製節點到剪貼簿（Singleton + Command） */
+  copyNode(node: FileSystemNode): string {
+    const command = new CopyCommand(node);
+    this.commandHistory.executeCommand(command);
+    return command.description;
+  }
+
+  /** 從剪貼簿貼上到目標目錄（Singleton + Command） */
+  pasteNode(targetDir: Directory): string | null {
+    const clipboard = Clipboard.getInstance();
+    if (!clipboard.hasContent()) return null;
+
+    const command = new PasteCommand(targetDir);
+    this.commandHistory.executeCommand(command);
+    return command.description;
+  }
+
+  /** Singleton — 取得剪貼簿實例（供 UI 判斷是否可貼上） */
+  getClipboard(): Clipboard {
+    return Clipboard.getInstance();
   }
 
   /** 計算總容量 */
