@@ -224,10 +224,23 @@ classDiagram
 
   readonly observerDiagram = `
 classDiagram
+  class IObserver~T~ {
+    <<interface>>
+    +update(event: T) void
+  }
+  class ISubject~T~ {
+    <<interface>>
+    +attach(observer: IObserver~T~) void
+    +detach(observer: IObserver~T~) void
+    +notify(event: T) void
+  }
   class SearchSubjectService {
     <<Subject>>
+    -observers: Set~IObserver~
     -searchEvent$: Subject~SearchEvent~
     +events$: Observable~SearchEvent~
+    +attach(observer) void
+    +detach(observer) void
     +notify(event) void
   }
   class SearchEvent {
@@ -235,14 +248,33 @@ classDiagram
     +node: FileSystemNode
     +message: string
   }
-  class DemoComponent {
+  class ConsoleObserver {
     <<Observer>>
+    -logs: string[]
+    +update(event) void
+    +getLogs() string[]
+    +getOutput() string
+    +clear() void
+  }
+  class DashboardObserver {
+    <<Observer>>
+    -stats: DashboardStats
+    +update(event) void
+    +getStats() DashboardStats
+    +reset() void
+  }
+  class DemoComponent {
+    <<Angular Observer>>
     -onSearchEvent(event) void
-    subscribe → 即時更新 UI
+    subscribe → 即時更新 UI 高亮
   }
 
+  ISubject~T~ <|.. SearchSubjectService : implements
+  IObserver~T~ <|.. ConsoleObserver : implements
+  IObserver~T~ <|.. DashboardObserver : implements
   SearchSubjectService --> SearchEvent : emits
-  DemoComponent --> SearchSubjectService : subscribes
+  SearchSubjectService --> IObserver~T~ : notifies
+  DemoComponent --> SearchSubjectService : subscribes(RxJS)
 `;
 
   /** ER Diagram — 資料庫 Table Schema */

@@ -19,6 +19,10 @@ import { SortBySizeStrategy } from './models/behavioral/sort-by-size.strategy';
 import { SortByExtensionStrategy } from './models/behavioral/sort-by-extension.strategy';
 import { SortByTagStrategy } from './models/behavioral/sort-by-tag.strategy';
 import { CommandHistory } from './services/behavioral/command-history.service';
+import { ConsoleObserver } from './models/behavioral/console.observer';
+import { DashboardObserver } from './models/behavioral/dashboard.observer';
+import type { IObserver, ISubject } from './models/behavioral/observer.interface';
+import type { SearchEvent } from './models/behavioral/search-event.model';
 
 // ==========================================
 // 單元測試 — 核心邏輯（不依賴 DOM / Angular）
@@ -477,5 +481,181 @@ describe('SortByTagStrategy', () => {
     expect(sorted[0].name).toBe('b.txt'); // 2 tags
     expect(sorted[1].name).toBe('c.txt'); // 1 tag
     expect(sorted[2].name).toBe('a.txt'); // 0 tags
+  });
+});
+
+// ─── Observer Pattern：GoF Subject / Observer ───
+
+describe('Observer Pattern — ConsoleObserver', () => {
+  let observer: ConsoleObserver;
+
+  beforeEach(() => {
+    observer = new ConsoleObserver();
+  });
+
+  it('should accumulate log messages on update', () => {
+    observer.update({ type: 'visiting', message: '📂 進入目錄: docs' });
+    observer.update({ type: 'matched', message: '✅ 匹配: report.docx' });
+
+    expect(observer.getLogs()).toEqual(['📂 進入目錄: docs', '✅ 匹配: report.docx']);
+  });
+
+  it('should return joined output string', () => {
+    observer.update({ type: 'visiting', message: 'A' });
+    observer.update({ type: 'visiting', message: 'B' });
+
+    expect(observer.getOutput()).toBe('A\nB');
+  });
+
+  it('should clear logs', () => {
+    observer.update({ type: 'visiting', message: 'test' });
+    observer.clear();
+
+    expect(observer.getLogs()).toEqual([]);
+    expect(observer.getOutput()).toBe('');
+  });
+
+  it('should return a copy of logs (immutable)', () => {
+    observer.update({ type: 'visiting', message: 'log1' });
+    const logs = observer.getLogs();
+    logs.push('injected');
+
+    expect(observer.getLogs()).toHaveLength(1);
+  });
+});
+
+describe('Observer Pattern — DashboardObserver', () => {
+  let observer: DashboardObserver;
+
+  beforeEach(() => {
+    observer = new DashboardObserver();
+  });
+
+  it('should start with initial stats', () => {
+    const stats = observer.getStats();
+    expect(stats.totalVisited).toBe(0);
+    expect(stats.totalMatched).toBe(0);
+    expect(stats.isComplete).toBe(false);
+    expect(stats.currentNode).toBeNull();
+  });
+
+  it('should track visiting events', () => {
+    const node = new TextFile('readme.txt', 5, 'UTF-8');
+    observer.update({ type: 'visiting', node, message: '🔎 檢查: readme.txt' });
+
+    const stats = observer.getStats();
+    expect(stats.totalVisited).toBe(1);
+    expect(stats.totalMatched).toBe(0);
+    expect(stats.currentNode).toBe('readme.txt');
+  });
+
+  it('should track matched events', () => {
+    const node = new WordFile('report.docx', 100, 10);
+    observer.update({ type: 'matched', node, message: '✅ 匹配: report.docx' });
+
+    const stats = observer.getStats();
+    expect(stats.totalVisited).toBe(1);
+    expect(stats.totalMatched).toBe(1);
+  });
+
+  it('should mark complete on complete event', () => {
+    observer.update({ type: 'visiting', message: '🔎 檢查' });
+    observer.update({ type: 'complete', message: '🏁 搜尋完成' });
+
+    const stats = observer.getStats();
+    expect(stats.isComplete).toBe(true);
+    expect(stats.currentNode).toBeNull();
+    expect(stats.progressText).toContain('搜尋完成');
+  });
+
+  it('should reset stats', () => {
+    observer.update({ type: 'visiting', message: 'test' });
+    observer.update({ type: 'matched', message: 'test' });
+    observer.reset();
+
+    const stats = observer.getStats();
+    expect(stats.totalVisited).toBe(0);
+    expect(stats.totalMatched).toBe(0);
+    expect(stats.isComplete).toBe(false);
+  });
+
+  it('should return a copy of stats (immutable)', () => {
+    const stats = observer.getStats();
+    stats.totalVisited = 999;
+
+    expect(observer.getStats().totalVisited).toBe(0);
+  });
+});
+
+describe('Observer Pattern — Subject attach/detach/notify', () => {
+  /** 簡易 Subject 實作，驗證 GoF 介面契約 */
+  class SimpleSubject implements ISubject<SearchEvent> {
+    private observers = new Set<IObserver<SearchEvent>>();
+
+    attach(observer: IObserver<SearchEvent>): void {
+      this.observers.add(observer);
+    }
+
+    detach(observer: IObserver<SearchEvent>): void {
+      this.observers.delete(observer);
+    }
+
+    notify(event: SearchEvent): void {
+      for (const obs of this.observers) {
+        obs.update(event);
+      }
+    }
+  }
+
+  it('should notify all attached observers', () => {
+    const subject = new SimpleSubject();
+    const consoleObs = new ConsoleObserver();
+    const dashboardObs = new DashboardObserver();
+
+    subject.attach(consoleObs);
+    subject.attach(dashboardObs);
+
+    const event: SearchEvent = { type: 'visiting', message: '📂 進入目錄: root' };
+    subject.notify(event);
+
+    expect(consoleObs.getLogs()).toHaveLength(1);
+    expect(dashboardObs.getStats().totalVisited).toBe(1);
+  });
+
+  it('should not notify detached observers', () => {
+    const subject = new SimpleSubject();
+    const observer = new ConsoleObserver();
+
+    subject.attach(observer);
+    subject.notify({ type: 'visiting', message: 'first' });
+
+    subject.detach(observer);
+    subject.notify({ type: 'visiting', message: 'second' });
+
+    expect(observer.getLogs()).toEqual(['first']);
+  });
+
+  it('should support mixed observer types independently', () => {
+    const subject = new SimpleSubject();
+    const consoleObs = new ConsoleObserver();
+    const dashboardObs = new DashboardObserver();
+
+    subject.attach(consoleObs);
+    subject.attach(dashboardObs);
+
+    // 搜尋流程：目錄 → 檔案(visiting) → 匹配 → 完成
+    subject.notify({ type: 'visiting', message: '📂 進入目錄: docs' });
+    subject.notify({ type: 'visiting', message: '🔎 檢查: a.txt' });
+    subject.notify({ type: 'matched', message: '✅ 匹配: a.txt' });
+    subject.notify({ type: 'complete', message: '🏁 完成' });
+
+    // ConsoleObserver 累積所有訊息
+    expect(consoleObs.getLogs()).toHaveLength(4);
+
+    // DashboardObserver 統計正確
+    const stats = dashboardObs.getStats();
+    expect(stats.totalVisited).toBe(3); // 2 visiting + 1 matched
+    expect(stats.totalMatched).toBe(1);
+    expect(stats.isComplete).toBe(true);
   });
 });

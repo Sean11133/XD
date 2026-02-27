@@ -27,4 +27,8 @@ export { SortByExtensionStrategy } from './sort-by-extension.strategy';
 export { SortByTagStrategy } from './sort-by-tag.strategy';
 
 // --- Observer Pattern ---
+export type { IObserver, ISubject } from './observer.interface';
+export { ConsoleObserver } from './console.observer';
+export { DashboardObserver } from './dashboard.observer';
+export type { DashboardStats } from './dashboard.observer';
 export type { SearchEvent, SearchEventType } from './search-event.model';
