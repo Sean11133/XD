@@ -307,6 +307,23 @@ li {
   margin-top: 10px;
 }
 
+.export-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .export-label {
+    color: #bbb;
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+
+  .btn {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+}
+
 .btn {
   padding: 8px 16px;
   border: none;

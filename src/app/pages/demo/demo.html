@@ -36,7 +36,13 @@
 
       <div class="controls">
         <button (click)="calculateTotalSize()" class="btn btn-blue">📊 計算大小</button>
-        <button (click)="exportToXml()" class="btn btn-green">📑 XML 匯出</button>
+
+        <div class="export-group">
+          <span class="export-label">📑 匯出：</span>
+          <button (click)="exportByFormat('xml')" class="btn btn-green">XML</button>
+          <button (click)="exportByFormat('json')" class="btn btn-green">JSON</button>
+          <button (click)="exportByFormat('markdown')" class="btn btn-green">Markdown</button>
+        </div>
 
         <div class="search-group">
           <input

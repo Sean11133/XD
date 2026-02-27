@@ -20,6 +20,7 @@ import {
   FileManagerFacade,
   type SortType,
 } from '../../services/behavioral/file-manager-facade.service';
+import type { ExportFormat } from '../../services/structural/file-system.service';
 
 import { ToolbarComponent } from './toolbar/toolbar';
 import { TreeViewComponent } from './tree-view/tree-view';
@@ -212,6 +213,20 @@ export class DemoComponent implements OnInit {
   exportToXml(): void {
     const xml = this.facade.exportToXml(this.root());
     this.appendLog(`[System] XML 匯出結果:\n${xml}`);
+  }
+
+  /**
+   * Template Method Pattern — 依格式匯出
+   * 所有匯出器共享相同骨架（脫逸、縮排），只有格式細節不同
+   */
+  exportByFormat(format: ExportFormat): void {
+    const formatLabels: Record<ExportFormat, string> = {
+      xml: 'XML',
+      json: 'JSON',
+      markdown: 'Markdown',
+    };
+    const result = this.facade.exportByFormat(this.root(), format);
+    this.appendLog(`[System] ${formatLabels[format]} 匯出結果:\n${result}`);
   }
 
   searchFiles(): void {
