@@ -18,6 +18,8 @@ export { DeleteCommand } from './delete.command';
 export { SortCommand } from './sort.command';
 export { TagCommand } from './tag.command';
 export type { TagAction } from './tag.command';
+export { CopyCommand } from './copy.command';
+export { PasteCommand } from './paste.command';
 
 // --- Strategy Pattern ---
 export type { ISortStrategy } from './sort-strategy.interface';
