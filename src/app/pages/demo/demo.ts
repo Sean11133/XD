@@ -5,6 +5,7 @@ import {
   computed,
   inject,
   OnInit,
+  OnDestroy,
   DestroyRef,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -16,6 +17,9 @@ import type { TagType } from '../../models/structural/tag.model';
 import { TagType as TagTypeEnum } from '../../models/structural/tag.model';
 import { SearchSubjectService } from '../../services/behavioral/search-subject.service';
 import type { SearchEvent } from '../../models/behavioral/search-event.model';
+import { ConsoleObserver } from '../../models/behavioral/console.observer';
+import { DashboardObserver } from '../../models/behavioral/dashboard.observer';
+import type { DashboardStats } from '../../models/behavioral/dashboard.observer';
 import {
   FileManagerFacade,
   type SortType,
@@ -25,6 +29,7 @@ import type { ExportFormat } from '../../services/structural/file-system.service
 import { ToolbarComponent } from './toolbar/toolbar';
 import { TreeViewComponent } from './tree-view/tree-view';
 import { ConsoleOutputComponent } from './console-output/console-output';
+import { DashboardPanelComponent } from './dashboard-panel/dashboard-panel';
 
 /** 排序方向：ascending / descending / null（無排序） */
 type SortDirection = 'asc' | 'desc' | null;
@@ -33,26 +38,44 @@ type SortDirection = 'asc' | 'desc' | null;
 // Live Demo — 雲端檔案管理系統（容器元件 / Smart Component）
 // 整合 Composite + Visitor + Observer + Command + Strategy Pattern
 //
-// 重構後僅作為 Smart Component，
-// 協調子元件（Toolbar / TreeView / Console）與 Facade Service
+// Observer Pattern 整合：
+//   Subject（發佈端）= SearchSubjectService
+//   Observer（接收端）= ConsoleObserver / DashboardObserver / RxJS subscribe
+//   發佈端與接收端完全解耦，可各自獨立開發
 // ==========================================
 
 @Component({
   selector: 'app-demo',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ToolbarComponent, TreeViewComponent, ConsoleOutputComponent],
+  imports: [
+    FormsModule,
+    ToolbarComponent,
+    TreeViewComponent,
+    ConsoleOutputComponent,
+    DashboardPanelComponent,
+  ],
   templateUrl: './demo.html',
   styleUrl: './demo.scss',
 })
-export class DemoComponent implements OnInit {
+export class DemoComponent implements OnInit, OnDestroy {
   readonly facade = inject(FileManagerFacade);
   private readonly searchSubject = inject(SearchSubjectService);
   private readonly destroyRef = inject(DestroyRef);
 
+  /**
+   * GoF Observer Pattern — 兩個獨立的接收端
+   * 各自關注不同面向，與 Subject 完全解耦
+   */
+  private readonly consoleObserver = new ConsoleObserver();
+  private readonly dashboardObserver = new DashboardObserver();
+
   root = signal<Directory>(new Directory('Loading...'));
   consoleOutput = signal<string>('系統準備就緒...\n等待指令。');
   searchExt = signal<string>('.docx');
+
+  /** DashboardObserver 的即時統計資料 */
+  dashboardStats = signal<DashboardStats | null>(null);
 
   selectedNode = signal<FileSystemNode | null>(null);
   activeSortType = signal<SortType | null>(null);
@@ -91,9 +114,20 @@ export class DemoComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // GoF Observer Pattern — 註冊觀察者到 Subject（attach）
+    this.searchSubject.attach(this.consoleObserver);
+    this.searchSubject.attach(this.dashboardObserver);
+
+    // RxJS 訂閱 — 處理 Angular UI 相關的即時更新（高亮、重繪）
     this.searchSubject.events$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       this.onSearchEvent(event);
     });
+  }
+
+  ngOnDestroy(): void {
+    // GoF Observer Pattern — 移除觀察者（detach）
+    this.searchSubject.detach(this.consoleObserver);
+    this.searchSubject.detach(this.dashboardObserver);
   }
 
   private onSearchEvent(event: SearchEvent): void {
@@ -231,9 +265,19 @@ export class DemoComponent implements OnInit {
 
   searchFiles(): void {
     const currentExt = this.searchExt();
+
+    // 重置 GoF Observer 狀態（每次搜尋重新計數）
+    this.consoleObserver.clear();
+    this.dashboardObserver.reset();
+    this.dashboardStats.set(null);
+
     this.appendLog(`[Observer] 🔍 開始搜尋 "${currentExt}"...\n${'─'.repeat(36)}`);
 
+    // 搜尋過程中 Subject 自動 notify → ConsoleObserver / DashboardObserver 各自更新
     const results = this.facade.searchByExtension(this.root(), currentExt);
+
+    // 搜尋完成，從 DashboardObserver 取得統計
+    this.dashboardStats.set(this.dashboardObserver.getStats());
 
     if (results.length === 0) {
       this.appendLog(`⚠️ 未找到符合 "${currentExt}" 的檔案。`);

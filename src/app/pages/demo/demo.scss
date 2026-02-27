@@ -40,13 +40,13 @@ h1 {
   gap: 20px;
 
   >app-tree-view {
-    width: calc(60% - 10px);
+    width: 50%;
     min-width: 0;
     flex: none;
   }
 
   >.action-panel {
-    width: calc(40% - 10px);
+    width: 50%;
     min-width: 0;
     flex: none;
   }
@@ -385,4 +385,25 @@ li {
   overflow-y: auto;
   height: 300px;
   font-size: 0.9rem;
+}
+
+/* Observer Section — Console + Dashboard 並排，固定高度 */
+.observer-section {
+  display: flex;
+  gap: 12px;
+  height: 320px;
+
+  .observer-main {
+    flex: 3;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .observer-side {
+    flex: 2;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
 }

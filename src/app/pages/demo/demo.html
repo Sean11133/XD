@@ -56,9 +56,17 @@
       </div>
 
       <!-- ==========================================
-           Observer Pattern — Console 面板
+           Observer Pattern — 監控區域
+           Console（日誌）+ Dashboard（儀表板）並排
            ========================================== -->
-      <app-console-output [content]="consoleOutput()" />
+      <div class="observer-section">
+        <div class="observer-main">
+          <app-console-output [content]="consoleOutput()" />
+        </div>
+        <div class="observer-side">
+          <app-dashboard-panel [stats]="dashboardStats()" />
+        </div>
+      </div>
     </div>
   </div>
 </div>

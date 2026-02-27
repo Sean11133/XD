@@ -24,21 +24,25 @@ import {
   `,
   styles: `
     :host {
-      display: block;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
     }
     .console-box {
       background: #000;
       border: 1px solid #333;
       border-radius: 4px;
-      flex-grow: 1;
+      height: 100%;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
     .console-header {
       background: #333;
       padding: 5px 10px;
       font-size: 0.8rem;
       color: #fff;
+      flex-shrink: 0;
     }
     .console-content {
       padding: 15px;
@@ -46,8 +50,9 @@ import {
       color: #cccccc;
       white-space: pre-wrap;
       overflow-y: auto;
-      height: 300px;
-      font-size: 0.9rem;
+      flex: 1;
+      font-size: 0.85rem;
+      line-height: 1.5;
     }
   `,
 })
