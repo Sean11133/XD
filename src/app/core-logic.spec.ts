@@ -8,6 +8,8 @@ import { formatSize } from './models/structural/format-size.util';
 import { TagType } from './models/structural/tag.model';
 import { FileFactory } from './models/creational/file.factory';
 import { XmlExportVisitor } from './models/behavioral/xml-export.visitor';
+import { JsonExportVisitor } from './models/behavioral/json-export.visitor';
+import { MarkdownExportVisitor } from './models/behavioral/markdown-export.visitor';
 import { ExtensionSearchVisitor } from './models/behavioral/extension-search.visitor';
 import { SortCommand } from './models/behavioral/sort.command';
 import { DeleteCommand } from './models/behavioral/delete.command';
@@ -155,6 +157,102 @@ describe('XmlExportVisitor — XML 輸出', () => {
 });
 
 // ─── Visitor Pattern：ExtensionSearchVisitor ───
+
+// ─── Template Method Pattern：JsonExportVisitor ───
+
+describe('JsonExportVisitor — JSON 輸出', () => {
+  it('should produce valid JSON structure', () => {
+    const root = new Directory('Root');
+    root.add(new WordFile('doc.docx', 500, 15));
+    root.add(new TextFile('note.txt', 1, 'UTF-8'));
+
+    const visitor = new JsonExportVisitor();
+    root.accept(visitor);
+    const json = visitor.getResult();
+
+    // 應可解析為合法 JSON
+    expect(() => JSON.parse(json)).not.toThrow();
+  });
+
+  it('should contain file entries as key-value pairs', () => {
+    const root = new Directory('Root');
+    root.add(new TextFile('readme.txt', 1, 'UTF-8'));
+
+    const visitor = new JsonExportVisitor();
+    root.accept(visitor);
+    const parsed = JSON.parse(visitor.getResult());
+
+    expect(parsed['Root']).toBeDefined();
+    expect(parsed['Root']['readme.txt']).toBeDefined();
+  });
+
+  it('should escape double quotes in content', () => {
+    const root = new Directory('Root');
+    root.add(new TextFile('test"file.txt', 1, 'UTF-8'));
+
+    const visitor = new JsonExportVisitor();
+    root.accept(visitor);
+    const json = visitor.getResult();
+
+    // 雙引號應被脫逸，不會破壞 JSON 結構
+    expect(() => JSON.parse(json)).not.toThrow();
+  });
+
+  it('should handle nested directories', () => {
+    const root = new Directory('Root');
+    const sub = new Directory('Sub');
+    sub.add(new WordFile('a.docx', 100, 5));
+    root.add(sub);
+
+    const visitor = new JsonExportVisitor();
+    root.accept(visitor);
+    const parsed = JSON.parse(visitor.getResult());
+
+    expect(parsed['Root']['Sub']['a.docx']).toBeDefined();
+  });
+});
+
+// ─── Template Method Pattern：MarkdownExportVisitor ───
+
+describe('MarkdownExportVisitor — Markdown 輸出', () => {
+  it('should produce markdown with headers for directories', () => {
+    const root = new Directory('Root');
+    root.add(new WordFile('doc.docx', 500, 15));
+
+    const visitor = new MarkdownExportVisitor();
+    root.accept(visitor);
+    const md = visitor.getResult();
+
+    expect(md).toContain('# 📂 Root');
+    expect(md).toContain('**doc.docx**');
+  });
+
+  it('should use deeper heading levels for nested directories', () => {
+    const root = new Directory('Root');
+    const sub = new Directory('Sub');
+    sub.add(new TextFile('a.txt', 10, 'UTF-8'));
+    root.add(sub);
+
+    const visitor = new MarkdownExportVisitor();
+    root.accept(visitor);
+    const md = visitor.getResult();
+
+    expect(md).toContain('# 📂 Root');
+    expect(md).toContain('## 📂 Sub');
+  });
+
+  it('should format files as list items with bold names', () => {
+    const root = new Directory('Root');
+    root.add(new ImageFile('pic.png', 2048, 1920, 1080));
+
+    const visitor = new MarkdownExportVisitor();
+    root.accept(visitor);
+    const md = visitor.getResult();
+
+    expect(md).toContain('- **pic.png**');
+    expect(md).toContain('—');
+  });
+});
 
 describe('ExtensionSearchVisitor — 副檔名搜尋', () => {
   let root: Directory;

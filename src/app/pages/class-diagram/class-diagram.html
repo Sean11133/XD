@@ -180,6 +180,175 @@
         </div>
       }
     </div>
+
+    <!-- ER Diagram -->
+    <div class="pattern-group">
+      <div class="pattern-header" (click)="toggleGroup('er')">
+        <span class="toggle-icon">{{ expandedGroup() === 'er' ? '▼' : '▶' }}</span>
+        <span class="pattern-label">ER Diagram — 資料庫 Table Schema</span>
+      </div>
+      @if (expandedGroup() === 'er') {
+        <div class="diagram-container">
+          <app-mermaid-diagram [definition]="erDiagram" />
+        </div>
+
+        <div class="pattern-note">
+          <strong>🔑 ER Model 設計要點：</strong>
+          <code>DIRECTORY</code> 透過 <code>parent_id</code> 自關聯實現無限巢狀 |
+          每種檔案類型獨立表格（Table-per-Type），各自儲存專屬欄位 | 所有檔案必須歸屬某個目錄（<code
+            >directory_id FK NOT NULL</code
+          >）
+        </div>
+
+        <div class="pattern-note" style="margin-top: 12px">
+          <strong>📋 Data Dictionary：</strong>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.9rem">
+            <thead>
+              <tr style="border-bottom: 1px solid #555; text-align: left">
+                <th style="padding: 4px 8px; color: #4ec9b0">表格</th>
+                <th style="padding: 4px 8px; color: #4ec9b0">欄位</th>
+                <th style="padding: 4px 8px; color: #4ec9b0">型別</th>
+                <th style="padding: 4px 8px; color: #4ec9b0">說明</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding: 3px 8px">DIRECTORY</td>
+                <td>id</td>
+                <td>INT PK</td>
+                <td>目錄唯一識別碼</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>name</td>
+                <td>VARCHAR</td>
+                <td>目錄名稱</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #333">
+                <td></td>
+                <td>parent_id</td>
+                <td>INT FK</td>
+                <td>父目錄 ID（NULL = 根目錄）</td>
+              </tr>
+              <tr>
+                <td style="padding: 3px 8px">WORD_FILE</td>
+                <td>id</td>
+                <td>INT PK</td>
+                <td>檔案唯一識別碼</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>name</td>
+                <td>VARCHAR</td>
+                <td>檔名</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>size_kb</td>
+                <td>FLOAT</td>
+                <td>檔案大小（KB）</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>created_at</td>
+                <td>DATETIME</td>
+                <td>建立時間</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>pages</td>
+                <td>INT</td>
+                <td>頁數</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #333">
+                <td></td>
+                <td>directory_id</td>
+                <td>INT FK</td>
+                <td>所屬目錄 ID</td>
+              </tr>
+              <tr>
+                <td style="padding: 3px 8px">IMAGE_FILE</td>
+                <td>id</td>
+                <td>INT PK</td>
+                <td>檔案唯一識別碼</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>name</td>
+                <td>VARCHAR</td>
+                <td>檔名</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>size_kb</td>
+                <td>FLOAT</td>
+                <td>檔案大小（KB）</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>created_at</td>
+                <td>DATETIME</td>
+                <td>建立時間</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>width</td>
+                <td>INT</td>
+                <td>圖片寬度（px）</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>height</td>
+                <td>INT</td>
+                <td>圖片高度（px）</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #333">
+                <td></td>
+                <td>directory_id</td>
+                <td>INT FK</td>
+                <td>所屬目錄 ID</td>
+              </tr>
+              <tr>
+                <td style="padding: 3px 8px">TEXT_FILE</td>
+                <td>id</td>
+                <td>INT PK</td>
+                <td>檔案唯一識別碼</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>name</td>
+                <td>VARCHAR</td>
+                <td>檔名</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>size_kb</td>
+                <td>FLOAT</td>
+                <td>檔案大小（KB）</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>created_at</td>
+                <td>DATETIME</td>
+                <td>建立時間</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>encoding</td>
+                <td>VARCHAR</td>
+                <td>編碼格式（如 UTF-8）</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>directory_id</td>
+                <td>INT FK</td>
+                <td>所屬目錄 ID</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
   </section>
 
   <!-- 關係圖例 -->

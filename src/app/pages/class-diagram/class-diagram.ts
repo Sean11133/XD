@@ -78,16 +78,41 @@ classDiagram
     +visitImageFile(file) void
     +visitTextFile(file) void
   }
-  class XmlExportVisitor {
-    -xml: string
-    -indentLevel: number
+  class BaseExportVisitor {
+    <<abstract / Template Method>>
+    #output: string
+    #indentLevel: number
+    #escape(text)* string
+    #indent() string
+    #formatDirectoryStart(name, count)* string
+    #formatDirectoryEnd(name)* string
+    #formatFile(name, details, isLast)* string
+    #beginExport() void
+    #endExport() void
     +getResult() string
-    +visitDirectory(dir) void
-    +visitWordFile(file) void
-    +visitImageFile(file) void
-    +visitTextFile(file) void
-    -appendNode(name, content) void
+    +reset() void
+  }
+  class XmlExportVisitor {
+    #escape(text) string
+    #formatDirectoryStart(name) string
+    #formatDirectoryEnd(name) string
+    #formatFile(name, details) string
     -sanitizeTagName(name) string
+  }
+  class JsonExportVisitor {
+    #escape(text) string
+    #formatDirectoryStart(name) string
+    #formatDirectoryEnd(name) string
+    #formatFile(name, details) string
+    #beginExport() void
+    #endExport() void
+  }
+  class MarkdownExportVisitor {
+    #escape(text) string
+    #indent() string
+    #formatDirectoryStart(name) string
+    #formatDirectoryEnd(name) string
+    #formatFile(name, details) string
   }
   class ExtensionSearchVisitor {
     -results: string[]
@@ -95,14 +120,14 @@ classDiagram
     -subject: SearchSubjectService
     +getResults() string[]
     +visitDirectory(dir) void
-    +visitWordFile(file) void
-    +visitImageFile(file) void
-    +visitTextFile(file) void
     -checkFile(file) void
   }
 
-  IVisitor <|.. XmlExportVisitor
+  IVisitor <|.. BaseExportVisitor
   IVisitor <|.. ExtensionSearchVisitor
+  BaseExportVisitor <|-- XmlExportVisitor
+  BaseExportVisitor <|-- JsonExportVisitor
+  BaseExportVisitor <|-- MarkdownExportVisitor
 `;
 
   readonly commandDiagram = `
@@ -218,5 +243,48 @@ classDiagram
 
   SearchSubjectService --> SearchEvent : emits
   DemoComponent --> SearchSubjectService : subscribes
+`;
+
+  /** ER Diagram — 資料庫 Table Schema */
+  readonly erDiagram = `
+erDiagram
+  DIRECTORY {
+    int id PK
+    string name
+    int parent_id FK "NULL 表示根目錄"
+  }
+
+  WORD_FILE {
+    int id PK
+    string name
+    float size_kb
+    datetime created_at
+    int pages
+    int directory_id FK
+  }
+
+  IMAGE_FILE {
+    int id PK
+    string name
+    float size_kb
+    datetime created_at
+    int width
+    int height
+    int directory_id FK
+  }
+
+  TEXT_FILE {
+    int id PK
+    string name
+    float size_kb
+    datetime created_at
+    string encoding
+    int directory_id FK
+  }
+
+  DIRECTORY ||--o{ DIRECTORY : "子目錄"
+  DIRECTORY ||--o{ WORD_FILE : "包含"
+  DIRECTORY ||--o{ IMAGE_FILE : "包含"
+  DIRECTORY ||--o{ TEXT_FILE : "包含"
 `;
 }
