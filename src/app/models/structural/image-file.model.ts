@@ -31,4 +31,11 @@ export class ImageFile extends FileNode {
   accept(visitor: IVisitor): void {
     visitor.visitImageFile(this);
   }
+
+  /** 深拷貝（產生新 ID，複製標籤） */
+  clone(): ImageFile {
+    const copy = new ImageFile(this.name, this.sizeKB, this.width, this.height, this.createdAt);
+    for (const tag of this.tags) copy.tags.add(tag);
+    return copy;
+  }
 }

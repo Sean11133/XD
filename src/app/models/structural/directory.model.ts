@@ -49,4 +49,14 @@ export class Directory extends FileSystemNode {
   accept(visitor: IVisitor): void {
     visitor.visitDirectory(this);
   }
+
+  /** 深拷貝（遞迴複製所有子節點，產生新 ID） */
+  clone(): Directory {
+    const copy = new Directory(this.name);
+    for (const tag of this.tags) copy.tags.add(tag);
+    for (const child of this.children) {
+      copy.add(child.clone());
+    }
+    return copy;
+  }
 }

@@ -30,4 +30,11 @@ export class WordFile extends FileNode {
   accept(visitor: IVisitor): void {
     visitor.visitWordFile(this);
   }
+
+  /** 深拷貝（產生新 ID，複製標籤） */
+  clone(): WordFile {
+    const copy = new WordFile(this.name, this.sizeKB, this.pages, this.createdAt);
+    for (const tag of this.tags) copy.tags.add(tag);
+    return copy;
+  }
 }

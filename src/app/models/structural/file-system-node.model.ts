@@ -35,6 +35,9 @@ export abstract class FileSystemNode {
   /** Visitor Pattern — 接受訪問者 */
   abstract accept(visitor: IVisitor): void;
 
+  /** 深拷貝節點（產生新 ID，供 Copy/Paste Command 使用） */
+  abstract clone(): FileSystemNode;
+
   /** 取得節點大小（KB） */
   abstract getSizeKB(): number;
 

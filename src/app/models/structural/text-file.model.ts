@@ -30,4 +30,11 @@ export class TextFile extends FileNode {
   accept(visitor: IVisitor): void {
     visitor.visitTextFile(this);
   }
+
+  /** 深拷貝（產生新 ID，複製標籤） */
+  clone(): TextFile {
+    const copy = new TextFile(this.name, this.sizeKB, this.encoding, this.createdAt);
+    for (const tag of this.tags) copy.tags.add(tag);
+    return copy;
+  }
 }
