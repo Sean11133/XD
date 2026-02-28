@@ -1,6 +1,8 @@
 import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
 
-import { TagType, TAG_COLORS } from '../../../models/structural/tag.model';
+import { TagType } from '../../../models/structural/tag.model';
+import { LabelFactory } from '../../../models/creational/label.flyweight';
+import type { Label } from '../../../models/creational/label.flyweight';
 import type { SortType } from '../../../services/behavioral/file-manager-facade.service';
 import type { CommandHistory } from '../../../services/behavioral/command-history.service';
 
@@ -52,17 +54,17 @@ import type { CommandHistory } from '../../../services/behavioral/command-histor
 
       <div class="toolbar-group">
         <span class="toolbar-icon">🏷️</span>
-        @for (tag of allTags; track tag) {
+        @for (label of allLabels; track label.type) {
           <button
             class="tag-btn"
-            [style.border-color]="TAG_COLORS[tag]"
-            [style.color]="TAG_COLORS[tag]"
+            [style.border-color]="label.color"
+            [style.color]="label.color"
             [disabled]="!hasSelectedNode()"
-            (click)="tagClicked.emit(tag)"
+            (click)="tagClicked.emit(label.type)"
           >
-            + {{ tag }}
-            @if (tagCounts()[tag] > 0) {
-              <span class="tag-count-badge">{{ tagCounts()[tag] }}</span>
+            {{ label.icon }} {{ label.displayName }}
+            @if (tagCounts()[label.type] > 0) {
+              <span class="tag-count-badge">{{ tagCounts()[label.type] }}</span>
             }
           </button>
         }
@@ -263,8 +265,7 @@ export class ToolbarComponent {
   undoClicked = output<void>();
   redoClicked = output<void>();
 
-  readonly TAG_COLORS = TAG_COLORS;
-  readonly allTags = [TagType.Urgent, TagType.Work, TagType.Personal];
+  readonly allLabels: Label[] = LabelFactory.getAllLabels();
 
   readonly sortTypes: { type: SortType; label: string }[] = [
     { type: 'name', label: '名稱' },

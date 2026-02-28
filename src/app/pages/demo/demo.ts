@@ -16,6 +16,7 @@ import { FileSystemNode } from '../../models/structural/file-system-node.model';
 import type { TagType } from '../../models/structural/tag.model';
 import { TagType as TagTypeEnum } from '../../models/structural/tag.model';
 import { Clipboard } from '../../models/creational/clipboard.singleton';
+import { LabelFactory } from '../../models/creational/label.flyweight';
 import { SearchSubjectService } from '../../services/behavioral/search-subject.service';
 import type { SearchEvent } from '../../models/behavioral/search-event.model';
 import { ConsoleObserver } from '../../models/behavioral/console.observer';
@@ -39,7 +40,7 @@ type SortDirection = 'asc' | 'desc' | null;
 // ==========================================
 // Live Demo — 雲端檔案管理系統（容器元件 / Smart Component）
 // 整合 Composite + Visitor + Observer + Command + Strategy
-//      + Decorator + Adapter + Singleton Pattern
+//      + Decorator + Adapter + Singleton + Flyweight + Mediator Pattern
 //
 // Observer Pattern 整合：
 //   Subject（發佈端）= SearchSubjectService
@@ -53,6 +54,10 @@ type SortDirection = 'asc' | 'desc' | null;
 // 🎨 Day 6 新增：
 //   Command Pattern  — CopyCommand / PasteCommand（複製、貼上）
 //   Singleton Pattern — Clipboard 全域共享剪貼簿
+//
+// 🎨 Day 7 新增：
+//   Flyweight Pattern — LabelFactory 共享標籤實體（享元池）
+//   Mediator Pattern  — TagMediator 集中管理標籤↔檔案多對多關係
 // ==========================================
 
 @Component({
@@ -114,16 +119,11 @@ export class DemoComponent implements OnInit, OnDestroy {
   /** 遞增版本號，強制 OnPush 子元件重新渲染 */
   treeVersion = signal(0);
 
-  /** 各標籤的即時數量（遍歷整棵樹計算） */
+  /** 各標籤的即時數量（透過 TagMediator 反向索引取得） */
   tagCounts = computed(() => {
     // 讀取 treeVersion 以建立依賴，確保每次變更都重新計算
     this.treeVersion();
-    const counts: Record<string, number> = {};
-    for (const tag of [TagTypeEnum.Urgent, TagTypeEnum.Work, TagTypeEnum.Personal]) {
-      counts[tag] = 0;
-    }
-    this.countTags(this.root(), counts);
-    return counts as Record<TagType, number>;
+    return this.facade.getTagMediator().getTagCounts();
   });
 
   /** Observer Pattern — 統一的 HTML 日誌累積陣列 */
@@ -141,6 +141,8 @@ export class DemoComponent implements OnInit, OnDestroy {
 
   constructor() {
     this.root.set(this.facade.buildSampleTree());
+    // 初始化 TagMediator（同步樹上既有標籤到中介者索引）
+    this.facade.syncTagMediator(this.root());
   }
 
   ngOnInit(): void {
@@ -212,7 +214,7 @@ export class DemoComponent implements OnInit, OnDestroy {
 
     this.selectedNode.set(null);
     this.appendLog(`[Command] 🗑️ ${desc}`);
-    this.treeVersion.update((v) => v + 1);
+    this.syncMediator();
   }
 
   toggleTag(tag: TagType): void {
@@ -247,7 +249,7 @@ export class DemoComponent implements OnInit, OnDestroy {
     }
 
     this.appendLog(`[Command] 📌 ${desc}`);
-    this.treeVersion.update((v) => v + 1);
+    this.syncMediator();
   }
 
   undo(): void {
@@ -255,7 +257,7 @@ export class DemoComponent implements OnInit, OnDestroy {
     if (command) {
       this.appendLog(`[Command] ↩️ 撤銷：${command.description}`);
       this.syncSortStateAfterUndoRedo();
-      this.treeVersion.update((v) => v + 1);
+      this.syncMediator();
     }
   }
 
@@ -264,7 +266,7 @@ export class DemoComponent implements OnInit, OnDestroy {
     if (command) {
       this.appendLog(`[Command] ↪️ 重做：${command.description}`);
       this.syncSortStateAfterUndoRedo();
-      this.treeVersion.update((v) => v + 1);
+      this.syncMediator();
     }
   }
 
@@ -283,16 +285,16 @@ export class DemoComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** 遞迴遍歷樹結構，統計各標籤數量 */
-  private countTags(node: FileSystemNode, counts: Record<string, number>): void {
-    for (const tag of node.tags) {
-      if (tag in counts) counts[tag]++;
-    }
-    if (node instanceof Directory) {
-      for (const child of node.children) {
-        this.countTags(child, counts);
-      }
-    }
+  /** 過歷遍歷樹結構，統計各標籤數量 — 已由 TagMediator.getTagCounts() 取代 */
+  // private countTags() — removed in Day 7
+
+  /**
+   * Mediator Pattern — 同步 TagMediator 並刷新樹版本
+   * 遍歷整棵樹重建標籤索引，再觸發 OnPush 重新渲染
+   */
+  private syncMediator(): void {
+    this.facade.syncTagMediator(this.root());
+    this.treeVersion.update((v) => v + 1);
   }
 
   calculateTotalSize(): void {
