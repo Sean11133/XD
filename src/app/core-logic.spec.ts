@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+﻿import { describe, it, expect, beforeEach } from 'vitest';
 
 import { Directory } from './models/structural/directory.model';
 import { WordFile } from './models/structural/word-file.model';
@@ -17,6 +17,8 @@ import { TagCommand } from './models/behavioral/tag.command';
 import { CopyCommand } from './models/behavioral/copy.command';
 import { PasteCommand } from './models/behavioral/paste.command';
 import { Clipboard } from './models/creational/clipboard.singleton';
+import { Label, LabelFactory } from './models/creational/label.flyweight';
+import { TagMediator } from './models/behavioral/tag.mediator';
 import { SortByNameStrategy } from './models/behavioral/sort-by-name.strategy';
 import { SortBySizeStrategy } from './models/behavioral/sort-by-size.strategy';
 import { SortByExtensionStrategy } from './models/behavioral/sort-by-extension.strategy';
@@ -26,6 +28,7 @@ import { ConsoleObserver } from './models/behavioral/console.observer';
 import { DashboardObserver } from './models/behavioral/dashboard.observer';
 import type { IObserver, ISubject } from './models/behavioral/observer.interface';
 import type { SearchEvent } from './models/behavioral/search-event.model';
+import type { ILogEntry } from './models/structural/log-entry.decorator';
 import {
   PlainLogEntry,
   IconDecorator,
@@ -372,26 +375,26 @@ describe('SortCommand + Strategy — 排序命令', () => {
   });
 
   it('should sort by name ascending', () => {
-    const cmd = new SortCommand(root, new SortByNameStrategy(true));
+    const cmd = new SortCommand(root, new SortByNameStrategy(true), 'name', true);
     cmd.execute();
     expect(root.children.map((c) => c.name)).toEqual(['alpha.docx', 'bravo.png', 'charlie.txt']);
   });
 
   it('should sort by name descending', () => {
-    const cmd = new SortCommand(root, new SortByNameStrategy(false));
+    const cmd = new SortCommand(root, new SortByNameStrategy(false), 'name', false);
     cmd.execute();
     expect(root.children.map((c) => c.name)).toEqual(['charlie.txt', 'bravo.png', 'alpha.docx']);
   });
 
   it('should sort by size ascending', () => {
-    const cmd = new SortCommand(root, new SortBySizeStrategy(true));
+    const cmd = new SortCommand(root, new SortBySizeStrategy(true), 'size', true);
     cmd.execute();
     expect(root.children.map((c) => c.getSizeKB())).toEqual([100, 200, 300]);
   });
 
   it('should undo sort to restore original order', () => {
     const originalNames = root.children.map((c) => c.name);
-    const cmd = new SortCommand(root, new SortByNameStrategy(true));
+    const cmd = new SortCommand(root, new SortByNameStrategy(true), 'name', true);
     cmd.execute();
     cmd.undo();
     expect(root.children.map((c) => c.name)).toEqual(originalNames);
@@ -725,7 +728,7 @@ describe('Decorator Pattern — BoldDecorator', () => {
 
 describe('Decorator Pattern — 裝飾器鏈組合', () => {
   it('should chain Color → Bold → Icon correctly', () => {
-    let entry = new PlainLogEntry('匹配: report.docx');
+    let entry: ILogEntry = new PlainLogEntry('匹配: report.docx');
     entry = new ColorDecorator(entry, 'green');
     entry = new BoldDecorator(entry);
     entry = new IconDecorator(entry, '✅');
@@ -1200,5 +1203,269 @@ describe('CopyCommand + PasteCommand — 與 CommandHistory 整合', () => {
 
     history.redo();
     expect(targetDir.children).toHaveLength(1);
+  });
+});
+
+// ─── Flyweight Pattern：Label + LabelFactory ───
+
+describe('Flyweight Pattern — LabelFactory', () => {
+  beforeEach(() => {
+    LabelFactory.resetPool();
+  });
+
+  it('should return the same Label instance for the same TagType (享元唐一性)', () => {
+    const a = LabelFactory.getLabel(TagType.Urgent);
+    const b = LabelFactory.getLabel(TagType.Urgent);
+    expect(a).toBe(b); // 同一參考
+  });
+
+  it('should return different instances for different TagTypes', () => {
+    const urgent = LabelFactory.getLabel(TagType.Urgent);
+    const work = LabelFactory.getLabel(TagType.Work);
+    expect(urgent).not.toBe(work);
+  });
+
+  it('should have correct intrinsic state', () => {
+    const label = LabelFactory.getLabel(TagType.Work);
+    expect(label.type).toBe(TagType.Work);
+    expect(label.displayName).toBe('工作');
+    expect(label.color).toBe('#3498db');
+    expect(label.icon).toBe('🔵');
+  });
+
+  it('should lazily create pool entries', () => {
+    expect(LabelFactory.getPoolSize()).toBe(0);
+    LabelFactory.getLabel(TagType.Urgent);
+    expect(LabelFactory.getPoolSize()).toBe(1);
+    LabelFactory.getLabel(TagType.Work);
+    expect(LabelFactory.getPoolSize()).toBe(2);
+    // 再次取得不應增加
+    LabelFactory.getLabel(TagType.Urgent);
+    expect(LabelFactory.getPoolSize()).toBe(2);
+  });
+
+  it('should return all 3 labels via getAllLabels()', () => {
+    const labels = LabelFactory.getAllLabels();
+    expect(labels).toHaveLength(3);
+    expect(labels.map((l) => l.type)).toEqual([TagType.Urgent, TagType.Work, TagType.Personal]);
+  });
+
+  it('should reset pool', () => {
+    LabelFactory.getLabel(TagType.Urgent);
+    expect(LabelFactory.getPoolSize()).toBe(1);
+    LabelFactory.resetPool();
+    expect(LabelFactory.getPoolSize()).toBe(0);
+  });
+
+  it('should create Label with readonly properties (immutable)', () => {
+    const label = LabelFactory.getLabel(TagType.Personal);
+    expect(label).toBeInstanceOf(Label);
+    expect(label.displayName).toBe('個人');
+    expect(label.color).toBe('#2ecc71');
+    expect(label.icon).toBe('🟢');
+  });
+});
+
+// ─── Mediator Pattern：TagMediator ───
+
+describe('Mediator Pattern — TagMediator', () => {
+  let mediator: TagMediator;
+
+  beforeEach(() => {
+    mediator = new TagMediator();
+    LabelFactory.resetPool();
+  });
+
+  it('should add tag and sync node.tags', () => {
+    const file = new WordFile('doc.docx', 100, 5);
+    mediator.addTag(file, TagType.Urgent);
+
+    expect(mediator.hasTag(file, TagType.Urgent)).toBe(true);
+    expect(file.tags.has(TagType.Urgent)).toBe(true); // 向後相容
+  });
+
+  it('should remove tag and sync node.tags', () => {
+    const file = new WordFile('doc.docx', 100, 5);
+    mediator.addTag(file, TagType.Work);
+    mediator.removeTag(file, TagType.Work);
+
+    expect(mediator.hasTag(file, TagType.Work)).toBe(false);
+    expect(file.tags.has(TagType.Work)).toBe(false);
+  });
+
+  it('should return Label[] via getLabelsForNode (Flyweight)', () => {
+    const file = new WordFile('doc.docx', 100, 5);
+    mediator.addTag(file, TagType.Urgent);
+    mediator.addTag(file, TagType.Work);
+
+    const labels = mediator.getLabelsForNode(file);
+    expect(labels).toHaveLength(2);
+    // 回傳的是 Flyweight Label 實體
+    expect(labels[0]).toBe(LabelFactory.getLabel(TagType.Urgent));
+  });
+
+  it('should reverse lookup: getNodesByLabel', () => {
+    const a = new WordFile('a.docx', 100, 5);
+    const b = new TextFile('b.txt', 50, 'UTF-8');
+    const c = new ImageFile('c.png', 200, 800, 600);
+
+    mediator.addTag(a, TagType.Urgent);
+    mediator.addTag(b, TagType.Urgent);
+    mediator.addTag(c, TagType.Work);
+
+    const urgentNodes = mediator.getNodesByLabel(TagType.Urgent);
+    expect(urgentNodes).toHaveLength(2);
+    expect(urgentNodes).toContain(a);
+    expect(urgentNodes).toContain(b);
+
+    const workNodes = mediator.getNodesByLabel(TagType.Work);
+    expect(workNodes).toHaveLength(1);
+    expect(workNodes[0]).toBe(c);
+  });
+
+  it('should compute tag counts correctly', () => {
+    const a = new WordFile('a.docx', 100, 5);
+    const b = new TextFile('b.txt', 50, 'UTF-8');
+
+    mediator.addTag(a, TagType.Urgent);
+    mediator.addTag(b, TagType.Urgent);
+    mediator.addTag(a, TagType.Work);
+
+    const counts = mediator.getTagCounts();
+    expect(counts[TagType.Urgent]).toBe(2);
+    expect(counts[TagType.Work]).toBe(1);
+    expect(counts[TagType.Personal]).toBe(0);
+  });
+
+  it('should register existing node.tags via registerNode', () => {
+    const file = new WordFile('doc.docx', 100, 5);
+    file.tags.add(TagType.Personal);
+    file.tags.add(TagType.Work);
+
+    mediator.registerNode(file);
+
+    expect(mediator.hasTag(file, TagType.Personal)).toBe(true);
+    expect(mediator.hasTag(file, TagType.Work)).toBe(true);
+    expect(mediator.getNodesByLabel(TagType.Personal)).toContain(file);
+  });
+
+  it('should unregister node and clean up indexes', () => {
+    const file = new WordFile('doc.docx', 100, 5);
+    mediator.addTag(file, TagType.Urgent);
+    mediator.addTag(file, TagType.Work);
+
+    mediator.unregisterNode(file);
+
+    expect(mediator.hasTag(file, TagType.Urgent)).toBe(false);
+    expect(mediator.getNodesByLabel(TagType.Urgent)).toHaveLength(0);
+    expect(mediator.getTagCounts()[TagType.Urgent]).toBe(0);
+  });
+
+  it('should syncFromTree and rebuild indexes', () => {
+    const root = new Directory('root');
+    const a = new WordFile('a.docx', 100, 5);
+    a.tags.add(TagType.Urgent);
+    const sub = new Directory('sub');
+    const b = new TextFile('b.txt', 50, 'UTF-8');
+    b.tags.add(TagType.Work);
+    b.tags.add(TagType.Urgent);
+    sub.add(b);
+    root.add(a);
+    root.add(sub);
+
+    mediator.syncFromTree(root);
+
+    expect(mediator.getTagCounts()[TagType.Urgent]).toBe(2);
+    expect(mediator.getTagCounts()[TagType.Work]).toBe(1);
+    expect(mediator.getNodesByLabel(TagType.Urgent)).toHaveLength(2);
+  });
+
+  it('should return empty for unknown node', () => {
+    const file = new WordFile('unknown.docx', 100, 5);
+    expect(mediator.hasTag(file, TagType.Urgent)).toBe(false);
+    expect(mediator.getLabelsForNode(file)).toHaveLength(0);
+  });
+
+  it('should return empty for unused label type', () => {
+    expect(mediator.getNodesByLabel(TagType.Personal)).toHaveLength(0);
+  });
+});
+
+// ─── TagCommand + TagMediator 整合 ───
+
+describe('TagCommand + TagMediator 整合', () => {
+  let mediator: TagMediator;
+
+  beforeEach(() => {
+    mediator = new TagMediator();
+    LabelFactory.resetPool();
+  });
+
+  it('should add tag via mediator on execute', () => {
+    const file = new WordFile('doc.docx', 100, 5);
+    const cmd = new TagCommand(file, TagType.Urgent, 'add', mediator);
+    cmd.execute();
+
+    expect(mediator.hasTag(file, TagType.Urgent)).toBe(true);
+    expect(file.tags.has(TagType.Urgent)).toBe(true);
+  });
+
+  it('should remove tag via mediator on undo', () => {
+    const file = new WordFile('doc.docx', 100, 5);
+    const cmd = new TagCommand(file, TagType.Work, 'add', mediator);
+    cmd.execute();
+    cmd.undo();
+
+    expect(mediator.hasTag(file, TagType.Work)).toBe(false);
+    expect(file.tags.has(TagType.Work)).toBe(false);
+  });
+
+  it('should use Flyweight Label in description', () => {
+    const file = new WordFile('doc.docx', 100, 5);
+    const cmd = new TagCommand(file, TagType.Urgent, 'add', mediator);
+    expect(cmd.description).toContain('緊急');
+    expect(cmd.description).toContain('新增標籤');
+  });
+
+  it('should work without mediator (backward compatible)', () => {
+    const file = new WordFile('doc.docx', 100, 5);
+    const cmd = new TagCommand(file, TagType.Personal, 'add');
+    cmd.execute();
+    expect(file.tags.has(TagType.Personal)).toBe(true);
+    cmd.undo();
+    expect(file.tags.has(TagType.Personal)).toBe(false);
+  });
+
+  it('should support full undo/redo flow with CommandHistory', () => {
+    const history = new CommandHistory();
+    const file = new WordFile('doc.docx', 100, 5);
+
+    history.executeCommand(new TagCommand(file, TagType.Urgent, 'add', mediator));
+    expect(mediator.hasTag(file, TagType.Urgent)).toBe(true);
+
+    history.executeCommand(new TagCommand(file, TagType.Work, 'add', mediator));
+    expect(mediator.getLabelsForNode(file)).toHaveLength(2);
+
+    history.undo();
+    expect(mediator.hasTag(file, TagType.Work)).toBe(false);
+    expect(mediator.getLabelsForNode(file)).toHaveLength(1);
+
+    history.redo();
+    expect(mediator.hasTag(file, TagType.Work)).toBe(true);
+  });
+
+  it('should update tag counts after add/remove via mediator', () => {
+    const a = new WordFile('a.docx', 100, 5);
+    const b = new TextFile('b.txt', 50, 'UTF-8');
+
+    new TagCommand(a, TagType.Urgent, 'add', mediator).execute();
+    new TagCommand(b, TagType.Urgent, 'add', mediator).execute();
+    new TagCommand(a, TagType.Work, 'add', mediator).execute();
+
+    expect(mediator.getTagCounts()[TagType.Urgent]).toBe(2);
+    expect(mediator.getTagCounts()[TagType.Work]).toBe(1);
+
+    new TagCommand(a, TagType.Urgent, 'remove', mediator).execute();
+    expect(mediator.getTagCounts()[TagType.Urgent]).toBe(1);
   });
 });
