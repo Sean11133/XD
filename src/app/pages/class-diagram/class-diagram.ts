@@ -169,6 +169,7 @@ classDiagram
     -node: FileSystemNode
     -tag: TagType
     -action: TagAction
+    -mediator: TagMediator
     +execute() void
     +undo() void
   }
@@ -212,6 +213,7 @@ classDiagram
   SortCommand --> ISortStrategy : uses
   CopyCommand --> Clipboard : uses
   PasteCommand --> Clipboard : uses
+  TagCommand --> TagMediator : uses
 `;
 
   readonly strategyDiagram = `
@@ -447,6 +449,88 @@ classDiagram
   FileManagerFacade --> CopyCommand : creates
   FileManagerFacade --> PasteCommand : creates
   note for Clipboard "private constructor\\n確保全域唯一實例"
+`;
+
+  /** Flyweight Pattern — 標籤享元 */
+  readonly flyweightDiagram = `
+classDiagram
+  class Label {
+    <<Flyweight>>
+    +type: TagType
+    +displayName: string
+    +color: string
+    +icon: string
+  }
+  class LabelFactory {
+    <<Flyweight Factory>>
+    -pool$: Map~TagType Label~
+    +getLabel(type)$ Label
+    +getAllLabels()$ Label[]
+    +getPoolSize()$ number
+    +resetPool()$ void
+    -createLabel(type)$ Label
+  }
+  class TagMediator {
+    <<Client>>
+    +getLabelsForNode(node) Label[]
+  }
+  class ToolbarComponent {
+    <<Client>>
+    +allLabels: Label[]
+  }
+
+  LabelFactory --> Label : creates / caches
+  LabelFactory ..> LabelFactory : pool (Map)
+  TagMediator --> LabelFactory : getLabel()
+  ToolbarComponent --> LabelFactory : getAllLabels()
+  note for LabelFactory "同一 TagType 永遠回傳\\n相同 Label 實例（唯一性）"
+`;
+
+  /** Mediator Pattern — 標籤中介者 */
+  readonly mediatorDiagram = `
+classDiagram
+  class TagMediator {
+    <<Mediator>>
+    -nodeToLabels: Map~id Set~TagType~~
+    -labelToNodeIds: Map~TagType Set~id~~
+    -nodeRegistry: Map~id FileSystemNode~
+    +addTag(node, type) void
+    +removeTag(node, type) void
+    +hasTag(node, type) boolean
+    +getLabelsForNode(node) Label[]
+    +getNodesByLabel(type) FileSystemNode[]
+    +getTagCounts() Record
+    +registerNode(node) void
+    +unregisterNode(node) void
+    +syncFromTree(root) void
+  }
+  class TagCommand {
+    <<Command / Colleague>>
+    -mediator: TagMediator
+    +execute() void
+    +undo() void
+  }
+  class FileManagerFacade {
+    <<Client>>
+    -tagMediator: TagMediator
+    +toggleTag(node, tag) string
+    +getTagMediator() TagMediator
+    +syncTagMediator(root) void
+  }
+  class FileSystemNode {
+    <<Colleague>>
+    +tags: Set~TagType~
+  }
+  class Label {
+    <<Flyweight>>
+  }
+
+  TagMediator --> FileSystemNode : 管理多對多
+  TagMediator --> Label : 回傳 Flyweight
+  TagCommand --> TagMediator : addTag / removeTag
+  FileManagerFacade --> TagMediator : holds
+  FileManagerFacade --> TagCommand : creates
+  note for TagMediator "正向索引：node → labels\\n反向索引：label → nodes\\n集中管理多對多關係"
 `;
 
   /** ER Diagram — 資料庫 Table Schema */

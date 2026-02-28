@@ -141,7 +141,8 @@
           >
           = Concrete Command | <code>CommandHistory</code> = Invoker（管理 Undo/Redo 堆疊）|
           <code>FileManagerFacade</code> = Client（建立命令）|
-          <code>CopyCommand / PasteCommand</code> 使用 <code>Clipboard</code> Singleton
+          <code>CopyCommand / PasteCommand</code> 使用 <code>Clipboard</code> Singleton |
+          <code>TagCommand</code> 使用 <code>TagMediator</code> 中介者
         </div>
       }
     </div>
@@ -245,6 +246,49 @@
           <code>CopyCommand</code> = Client（將選取的節點深拷貝至剪貼簿）|
           <code>PasteCommand</code> = Client（從剪貼簿取出副本，貼入目標目錄）|
           <code>FileManagerFacade</code> = Client（封裝 Copy/Paste 操作供元件呼叫）
+        </div>
+      }
+    </div>
+
+    <!-- Flyweight Pattern -->
+    <div class="pattern-group">
+      <div class="pattern-header" (click)="toggleGroup('flyweight')">
+        <span class="toggle-icon">{{ expandedGroup() === 'flyweight' ? '▼' : '▶' }}</span>
+        <span class="pattern-label">Flyweight Pattern — 享元（共享標籤）</span>
+      </div>
+      @if (expandedGroup() === 'flyweight') {
+        <div class="diagram-container">
+          <app-mermaid-diagram [definition]="flyweightDiagram" />
+        </div>
+
+        <div class="pattern-note">
+          <strong>🔑 Flyweight Pattern 角色：</strong>
+          <code>Label</code> = Flyweight（不可變共享物件，intrinsic state：type / displayName /
+          color / icon）| <code>LabelFactory</code> = Flyweight Factory（維護享元池，同一 TagType
+          回傳同一實例）| <code>TagMediator</code> / <code>ToolbarComponent</code> = Client（透過
+          Factory 取得共享 Label）
+        </div>
+      }
+    </div>
+
+    <!-- Mediator Pattern -->
+    <div class="pattern-group">
+      <div class="pattern-header" (click)="toggleGroup('mediator')">
+        <span class="toggle-icon">{{ expandedGroup() === 'mediator' ? '▼' : '▶' }}</span>
+        <span class="pattern-label">Mediator Pattern — 中介者（標籤管理）</span>
+      </div>
+      @if (expandedGroup() === 'mediator') {
+        <div class="diagram-container">
+          <app-mermaid-diagram [definition]="mediatorDiagram" />
+        </div>
+
+        <div class="pattern-note">
+          <strong>🔑 Mediator Pattern 角色：</strong>
+          <code>TagMediator</code> = Mediator（集中管理標籤↔節點的多對多關係，維護正向/反向索引）|
+          <code>TagCommand</code> = Colleague（透過 Mediator 新增/移除標籤，不直接操作 node.tags）|
+          <code>FileSystemNode</code> = Colleague（被管理的檔案節點）|
+          <code>FileManagerFacade</code> = Client（持有 Mediator 實例，暴露 toggleTag /
+          syncTagMediator）
         </div>
       }
     </div>
