@@ -21,6 +21,9 @@ export type { TagAction } from './tag.command';
 export { CopyCommand } from './copy.command';
 export { PasteCommand } from './paste.command';
 
+// --- Mediator Pattern ---
+export { TagMediator } from './tag.mediator';
+
 // --- Strategy Pattern ---
 export type { ISortStrategy } from './sort-strategy.interface';
 export { SortByNameStrategy } from './sort-by-name.strategy';
