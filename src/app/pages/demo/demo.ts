@@ -14,18 +14,11 @@ import { FormsModule } from '@angular/forms';
 import { Directory } from '../../models/structural/directory.model';
 import { FileSystemNode } from '../../models/structural/file-system-node.model';
 import type { TagType } from '../../models/structural/tag.model';
-import { TagType as TagTypeEnum } from '../../models/structural/tag.model';
-import { Clipboard } from '../../models/creational/clipboard.singleton';
-import { LabelFactory } from '../../models/creational/label.flyweight';
-import { SearchSubjectService } from '../../services/behavioral/search-subject.service';
 import type { SearchEvent } from '../../models/behavioral/search-event.model';
-import { ConsoleObserver } from '../../models/behavioral/console.observer';
-import { SearchEventAdapter } from '../../models/structural/search-event.adapter';
-import type { IDashboardDisplay } from '../../models/structural/search-event.adapter';
-import { decorateLogEntry } from '../../models/structural/log-decorator.factory';
 import {
   FileManagerFacade,
   type SortType,
+  type IDashboardDisplay,
 } from '../../services/behavioral/file-manager-facade.service';
 import type { ExportFormat } from '../../services/structural/file-system.service';
 
@@ -40,24 +33,16 @@ type SortDirection = 'asc' | 'desc' | null;
 // ==========================================
 // Live Demo — 雲端檔案管理系統（容器元件 / Smart Component）
 // 整合 Composite + Visitor + Observer + Command + Strategy
-//      + Decorator + Adapter + Singleton + Flyweight + Mediator Pattern
+//      + Decorator + Adapter + Singleton + Flyweight + Mediator + Facade Pattern
 //
-// Observer Pattern 整合：
-//   Subject（發佈端）= SearchSubjectService
-//   Observer（接收端）= ConsoleObserver / SearchEventAdapter / RxJS subscribe
-//   發佈端與接收端完全解耦，可各自獨立開發
-//
-// 🎨 Day 5 新增：
-//   Decorator Pattern — ConsoleObserver 用裝飾器鏈美化日誌
-//   Adapter Pattern  — SearchEventAdapter 將事件流轉為 Dashboard 介面
-//
-// 🎨 Day 6 新增：
-//   Command Pattern  — CopyCommand / PasteCommand（複製、貼上）
-//   Singleton Pattern — Clipboard 全域共享剪貼簿
-//
-// 🎨 Day 7 新增：
-//   Flyweight Pattern — LabelFactory 共享標籤實體（享元池）
-//   Mediator Pattern  — TagMediator 集中管理標籤↔檔案多對多關係
+// 🎨 Day 8：Facade 統整所有操作入口
+//   元件只依賴 FileManagerFacade，不直接接觸任何模式實作類別：
+//   - Observer 生命週期：facade.initObservers() / disposeObservers()
+//   - 搜尋事件流：facade.searchEvents$（RxJS Observable）
+//   - 日誌裝飾：facade.formatLog()（封裝 Decorator Pattern 工廠）
+//   - 剪貼簿判斷：facade.canPasteNode()（封裝 Singleton Pattern）
+//   - 搜尋準備：facade.prepareSearch()（封裝 Observer reset 流程）
+//   - 儀表板資料：facade.getDashboardAdapter()（回傳 IDashboardDisplay 介面）
 // ==========================================
 
 @Component({
@@ -76,17 +61,15 @@ type SortDirection = 'asc' | 'desc' | null;
 })
 export class DemoComponent implements OnInit, OnDestroy {
   readonly facade = inject(FileManagerFacade);
-  private readonly searchSubject = inject(SearchSubjectService);
   private readonly destroyRef = inject(DestroyRef);
 
   /**
    * GoF Observer Pattern — 兩個獨立的接收端
+   * 均投扣至 Facade 持有，元件不直接知道實作類別
    *
    * ConsoleObserver：日誌觀察者，內部用 Decorator Pattern 裝飾訊息
    * SearchEventAdapter：Adapter Pattern，將 SearchEvent 轉為 IDashboardDisplay
    */
-  private readonly consoleObserver = new ConsoleObserver();
-  private readonly dashboardAdapter = new SearchEventAdapter();
 
   root = signal<Directory>(new Directory('Loading...'));
   consoleOutput = signal<string>('系統準備就緒...<br>等待指令。');
@@ -99,9 +82,6 @@ export class DemoComponent implements OnInit, OnDestroy {
   activeSortType = signal<SortType | null>(null);
   activeSortDirection = signal<SortDirection>(null);
 
-  /** Singleton — Clipboard 實例（供 canPaste 計算用） */
-  private readonly clipboard = Clipboard.getInstance();
-
   /**
    * 是否可以貼上：
    * 1. 剪貼簿有內容
@@ -110,10 +90,7 @@ export class DemoComponent implements OnInit, OnDestroy {
   canPaste = computed(() => {
     // 讀取 treeVersion 確保 signal 依賴更新
     this.treeVersion();
-    if (!this.clipboard.hasContent()) return false;
-    const node = this.selectedNode();
-    // 未選取 → 可貼到根目錄；選取目錄 → 可貼
-    return !node || node instanceof Directory;
+    return this.facade.canPasteNode(this.selectedNode());
   });
 
   /** 遞增版本號，強制 OnPush 子元件重新渲染 */
@@ -130,12 +107,11 @@ export class DemoComponent implements OnInit, OnDestroy {
   private consoleLogs: string[] = ['系統準備就緒...<br>等待指令。'];
 
   /**
-   * Observer Pattern — 統一日誌推送入口
-   * 非搜尋事件也透過 Decorator Pattern 裝飾後追加至日誌流
+   * Decorator Pattern — 日誌推送入口（透過 Facade.formatLog 裝飾）
+   * 非搜尋事件也通過此方法建立裝飾日誌流
    */
   private appendLog(message: string): void {
-    const decorated = decorateLogEntry(message);
-    this.consoleLogs.push(decorated.render());
+    this.consoleLogs.push(this.facade.formatLog(message));
     this.consoleOutput.set(this.consoleLogs.join('<br>'));
   }
 
@@ -146,20 +122,18 @@ export class DemoComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // GoF Observer Pattern — 註冊觀察者到 Subject（attach）
-    this.searchSubject.attach(this.consoleObserver);
-    this.searchSubject.attach(this.dashboardAdapter);
+    // GoF Observer Pattern — 透過 Facade 初始化觀察者（attach）
+    this.facade.initObservers();
 
     // RxJS 訂閱 — 處理 Angular UI 相關的即時更新（高亮、重繪）
-    this.searchSubject.events$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+    this.facade.searchEvents$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       this.onSearchEvent(event);
     });
   }
 
   ngOnDestroy(): void {
-    // GoF Observer Pattern — 移除觀察者（detach）
-    this.searchSubject.detach(this.consoleObserver);
-    this.searchSubject.detach(this.dashboardAdapter);
+    // GoF Observer Pattern — 透過 Facade 移除觀察者（detach）
+    this.facade.disposeObservers();
   }
 
   private onSearchEvent(event: SearchEvent): void {
@@ -324,14 +298,9 @@ export class DemoComponent implements OnInit, OnDestroy {
   searchFiles(): void {
     const currentExt = this.searchExt();
 
-    // 重置 GoF Observer 狀態（每次搜尋重新計數）
-    this.consoleObserver.clear();
-    this.dashboardAdapter.reset();
+    // 透過 Facade 準備搜尋：重置 Observer 狀態 + 計算預期節點數
+    this.facade.prepareSearch(this.root());
     this.dashboardDisplay.set(null);
-
-    // Adapter Pattern — 計算樹的總節點數，讓進度條能顯示百分比
-    const totalNodes = this.countTreeNodes(this.root());
-    this.dashboardAdapter.setExpectedTotal(totalNodes);
 
     this.appendLog(`[Observer] 🔍 開始搜尋 "${currentExt}"...\n${'─'.repeat(36)}`);
 
@@ -339,7 +308,7 @@ export class DemoComponent implements OnInit, OnDestroy {
     const results = this.facade.searchByExtension(this.root(), currentExt);
 
     // 搜尋完成，將 Adapter（IDashboardDisplay）傳給 Dashboard 元件
-    this.dashboardDisplay.set(this.dashboardAdapter);
+    this.dashboardDisplay.set(this.facade.getDashboardAdapter());
 
     if (results.length === 0) {
       this.appendLog(`⚠️ 未找到符合 "${currentExt}" 的檔案。`);
@@ -350,11 +319,5 @@ export class DemoComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** 遞迴計算樹的總節點數（供 Adapter 計算進度百分比） */
-  private countTreeNodes(node: FileSystemNode): number {
-    if (node instanceof Directory) {
-      return 1 + node.children.reduce((sum, child) => sum + this.countTreeNodes(child), 0);
-    }
-    return 1;
-  }
+  /** 遞迴計算樹的節點總數 — 已移至 Facade.countTreeNodes() */
 }
