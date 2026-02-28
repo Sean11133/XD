@@ -12,4 +12,4 @@ export { CommandHistory } from './command-history.service';
 export { SearchSubjectService } from './search-subject.service';
 export { ViewStateService } from './view-state.service';
 export { FileManagerFacade } from './file-manager-facade.service';
-export type { SortType } from './file-manager-facade.service';
+export type { SortType, IDashboardDisplay } from './file-manager-facade.service';

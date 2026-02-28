@@ -22,15 +22,27 @@ import { SortBySizeStrategy } from '../../models/behavioral/sort-by-size.strateg
 import { SortByExtensionStrategy } from '../../models/behavioral/sort-by-extension.strategy';
 import { SortByTagStrategy } from '../../models/behavioral/sort-by-tag.strategy';
 import type { ISortStrategy } from '../../models/behavioral/sort-strategy.interface';
+import { ConsoleObserver } from '../../models/behavioral/console.observer';
+import { SearchEventAdapter } from '../../models/structural/search-event.adapter';
+import type { IDashboardDisplay } from '../../models/structural/search-event.adapter';
+import { decorateLogEntry } from '../../models/structural/log-decorator.factory';
 
 /** 排序類型 */
 export type SortType = 'name' | 'size' | 'extension' | 'tag';
 
+/** 重新匯出儀表板介面，讓 UI 層不必直接依賴 Adapter 實作模組 */
+export type { IDashboardDisplay };
+
 // ==========================================
-// Facade Service — 整合操作入口
+// Facade Service — 整合操作入口（Day 8 完成版）
 //
-// 封裝 Command / Strategy / Visitor / Observer 的互動，
-// 讓 Component 不需直接操作底層細節。
+// 封裝所有模式的互動，Component 只需與本 Facade 溝通：
+//   Command + Strategy + Visitor：排序、刪除、標籤、匯出、搜尋
+//   Observer：管理 ConsoleObserver / SearchEventAdapter 生命週期
+//   Singleton：Clipboard 存取、貼上判斷
+//   Flyweight：LabelFactory 透過 TagMediator 回傳 Label
+//   Mediator：TagMediator 集中管理標籤索引
+//   Decorator：formatLog() 內建日誌裝飾鏈
 // ==========================================
 
 @Injectable({ providedIn: 'root' })
@@ -42,6 +54,102 @@ export class FileManagerFacade {
 
   /** Mediator Pattern — 集中管理標籤與檔案的多對多關係 */
   private readonly tagMediator = new TagMediator();
+
+  /** Observer Pattern — 日誌觀察者（內建 Decorator 裝飾鏈） */
+  private readonly consoleObserver = new ConsoleObserver();
+
+  /** Adapter Pattern — 將 SearchEvent 轉換為 IDashboardDisplay 介面 */
+  private readonly dashboardAdapter = new SearchEventAdapter();
+
+  // ──────────────────────────────────────────
+  // Observer 生命週期管理
+  // ──────────────────────────────────────────
+
+  /**
+   * 初始化 Observer（GoF Observer Pattern — attach）
+   * 在元件 ngOnInit 時呼叫，讓兩個 Observer 開始接收搜尋事件
+   */
+  initObservers(): void {
+    this.searchSubject.attach(this.consoleObserver);
+    this.searchSubject.attach(this.dashboardAdapter);
+  }
+
+  /**
+   * 清理 Observer（GoF Observer Pattern — detach）
+   * 在元件 ngOnDestroy 時呼叫，防止記憶體洩漏
+   */
+  disposeObservers(): void {
+    this.searchSubject.detach(this.consoleObserver);
+    this.searchSubject.detach(this.dashboardAdapter);
+  }
+
+  /** 取得 ConsoleObserver（供讀取 HTML 日誌輸出） */
+  getConsoleObserver(): ConsoleObserver {
+    return this.consoleObserver;
+  }
+
+  /**
+   * 取得儀表板資料介面（Adapter Pattern）
+   * 回傳 IDashboardDisplay 而非 SearchEventAdapter，
+   * 確保呼叫端只依賴目標介面，不接觸 Adaptee 細節
+   */
+  getDashboardAdapter(): IDashboardDisplay {
+    return this.dashboardAdapter;
+  }
+
+  /**
+   * RxJS 搜尋事件流（供 UI 訂閱即時高亮更新）
+   * 暴露 Observable 而非注入 SearchSubjectService，
+   * 讓 Component 不需直接依賴底層 Subject 服務
+   */
+  get searchEvents$() {
+    return this.searchSubject.events$;
+  }
+
+  // ──────────────────────────────────────────
+  // 日誌 / 工具
+  // ──────────────────────────────────────────
+
+  /**
+   * Decorator Pattern — 格式化日誌訊息為 HTML 字串
+   * 封裝 decorateLogEntry 工廠，Component 不需知道裝飾器存在
+   */
+  formatLog(message: string): string {
+    return decorateLogEntry(message).render();
+  }
+
+  /**
+   * 是否可執行貼上操作
+   * @param node 目前選取的節點（null 表示未選取，可貼至根目錄）
+   */
+  canPasteNode(node: FileSystemNode | null): boolean {
+    return this.getClipboard().hasContent() && (!node || node instanceof Directory);
+  }
+
+  /**
+   * 搜尋前準備：重置觀察者狀態並設定進度基準
+   * 封裝「清除 → 重置 → 設定 expected total」三步驟
+   */
+  prepareSearch(root: FileSystemNode): void {
+    this.consoleObserver.clear();
+    this.dashboardAdapter.reset();
+    const totalNodes = this.countTreeNodes(root);
+    this.dashboardAdapter.setExpectedTotal(totalNodes);
+  }
+
+  /**
+   * 遞迴計算樹的節點總數（供搜尋進度百分比計算）
+   */
+  countTreeNodes(node: FileSystemNode): number {
+    if (node instanceof Directory) {
+      return 1 + node.children.reduce((sum, child) => sum + this.countTreeNodes(child), 0);
+    }
+    return 1;
+  }
+
+  // ──────────────────────────────────────────
+  // 排序
+  // ──────────────────────────────────────────
 
   /** 建立排序策略（依類型動態建立，避免每次建構全部策略物件） */
   private createStrategy(type: SortType, ascending: boolean): ISortStrategy {
