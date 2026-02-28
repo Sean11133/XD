@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 
 import { FileSystemNode } from '../../../models/structural/file-system-node.model';
 import { Directory } from '../../../models/structural/directory.model';
-import { TagType, TAG_COLORS } from '../../../models/structural/tag.model';
+import { TagType } from '../../../models/structural/tag.model';
+import { LabelFactory } from '../../../models/creational/label.flyweight';
+import type { Label } from '../../../models/creational/label.flyweight';
 import { ViewStateService } from '../../../services/behavioral/view-state.service';
 
 // ==========================================
@@ -53,7 +55,9 @@ import { ViewStateService } from '../../../services/behavioral/view-state.servic
           }
 
           @for (tag of node.getTagsArray(); track tag) {
-            <span class="tag-badge" [style.background-color]="getTagColor(tag)">{{ tag }}</span>
+            <span class="tag-badge" [style.background-color]="getLabelForTag(tag).color">
+              {{ getLabelForTag(tag).icon }} {{ getLabelForTag(tag).displayName }}
+            </span>
           }
         </div>
 
@@ -210,7 +214,11 @@ export class TreeViewComponent {
     return node instanceof Directory;
   }
 
-  getTagColor(tag: TagType): string {
-    return TAG_COLORS[tag];
+  /**
+   * Flyweight Pattern — 透過 LabelFactory 取得共享 Label
+   * 不直接存取 TAG_COLORS，保持對 Flyweight 的單一依賴
+   */
+  getLabelForTag(tag: TagType): Label {
+    return LabelFactory.getLabel(tag);
   }
 }
