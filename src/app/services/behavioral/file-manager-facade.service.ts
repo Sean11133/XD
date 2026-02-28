@@ -13,6 +13,7 @@ import { RestoreSortCommand } from '../../models/behavioral/restore-sort.command
 import { DeleteCommand } from '../../models/behavioral/delete.command';
 import { TagCommand } from '../../models/behavioral/tag.command';
 import type { TagAction } from '../../models/behavioral/tag.command';
+import { TagMediator } from '../../models/behavioral/tag.mediator';
 import { CopyCommand } from '../../models/behavioral/copy.command';
 import { PasteCommand } from '../../models/behavioral/paste.command';
 import { Clipboard } from '../../models/creational/clipboard.singleton';
@@ -38,6 +39,9 @@ export class FileManagerFacade {
   readonly commandHistory = inject(CommandHistory);
   private readonly searchSubject = inject(SearchSubjectService);
   readonly viewState = inject(ViewStateService);
+
+  /** Mediator Pattern — 集中管理標籤與檔案的多對多關係 */
+  private readonly tagMediator = new TagMediator();
 
   /** 建立排序策略（依類型動態建立，避免每次建構全部策略物件） */
   private createStrategy(type: SortType, ascending: boolean): ISortStrategy {
@@ -82,12 +86,22 @@ export class FileManagerFacade {
     return command.description;
   }
 
-  /** 切換標籤 */
+  /** 切換標籤（Mediator + Command + Flyweight） */
   toggleTag(node: FileSystemNode, tag: TagType): string {
-    const action: TagAction = node.tags.has(tag) ? 'remove' : 'add';
-    const command = new TagCommand(node, tag, action);
+    const action: TagAction = this.tagMediator.hasTag(node, tag) ? 'remove' : 'add';
+    const command = new TagCommand(node, tag, action, this.tagMediator);
     this.commandHistory.executeCommand(command);
     return command.description;
+  }
+
+  /** 取得 TagMediator（供元件查詢標籤計數、反向查詢） */
+  getTagMediator(): TagMediator {
+    return this.tagMediator;
+  }
+
+  /** 同步 TagMediator 索引（遍歷整棵樹重建正向/反向索引） */
+  syncTagMediator(root: Directory): void {
+    this.tagMediator.syncFromTree(root);
   }
 
   /** 複製節點到剪貼簿（Singleton + Command） */
