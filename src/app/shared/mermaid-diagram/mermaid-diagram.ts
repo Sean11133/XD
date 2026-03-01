@@ -7,9 +7,96 @@ import {
   afterNextRender,
   signal,
 } from '@angular/core';
-import mermaid from 'mermaid';
 
 let idCounter = 0;
+
+type MermaidApi = (typeof import('mermaid'))['default'];
+
+let mermaidPromise: Promise<MermaidApi> | null = null;
+let mermaidInitialized = false;
+
+const svgCache = new Map<string, string>();
+const MAX_CACHE_SIZE = 100;
+
+function getMermaid(): Promise<MermaidApi> {
+  if (!mermaidPromise) {
+    mermaidPromise = import('mermaid').then((module) => module.default);
+  }
+  return mermaidPromise;
+}
+
+function initializeMermaid(mermaid: MermaidApi): void {
+  if (mermaidInitialized) return;
+
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'dark',
+    themeVariables: {
+      darkMode: true,
+      background: '#161b22',
+      primaryColor: '#1a2a3e',
+      primaryTextColor: '#e0e0e0',
+      primaryBorderColor: '#0e639c',
+      lineColor: '#8b949e',
+      secondaryColor: '#0d2a1a',
+      tertiaryColor: '#2a1a0d',
+      noteBkgColor: '#1a2a3e',
+      noteTextColor: '#c9d1d9',
+      noteBorderColor: '#30363d',
+      actorBkg: '#1a2a3e',
+      actorBorder: '#0e639c',
+      actorTextColor: '#e0e0e0',
+      actorLineColor: '#555',
+      signalColor: '#c9d1d9',
+      signalTextColor: '#c9d1d9',
+      labelBoxBkgColor: '#1a2a3e',
+      labelBoxBorderColor: '#30363d',
+      labelTextColor: '#e0e0e0',
+      loopTextColor: '#8b949e',
+      activationBorderColor: '#4ec9b0',
+      activationBkgColor: 'rgba(78, 201, 176, 0.15)',
+      sequenceNumberColor: '#fff',
+      classText: '#e0e0e0',
+    },
+    sequence: {
+      actorMargin: 50,
+      mirrorActors: false,
+      messageMargin: 40,
+      boxMargin: 10,
+      useMaxWidth: true,
+    },
+    flowchart: {
+      useMaxWidth: true,
+      htmlLabels: true,
+      curve: 'basis',
+    },
+  });
+
+  mermaidInitialized = true;
+}
+
+function readCache(definition: string): string | undefined {
+  const cachedSvg = svgCache.get(definition);
+  if (!cachedSvg) return undefined;
+
+  svgCache.delete(definition);
+  svgCache.set(definition, cachedSvg);
+  return cachedSvg;
+}
+
+function writeCache(definition: string, svg: string): void {
+  if (svgCache.has(definition)) {
+    svgCache.delete(definition);
+  }
+  svgCache.set(definition, svg);
+
+  if (svgCache.size > MAX_CACHE_SIZE) {
+    const oldestKey = svgCache.keys().next().value;
+    if (oldestKey) {
+      svgCache.delete(oldestKey);
+    }
+  }
+}
 
 @Component({
   selector: 'app-mermaid-diagram',
@@ -140,54 +227,24 @@ export class MermaidDiagramComponent {
 
   constructor() {
     afterNextRender(async () => {
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: 'dark',
-        themeVariables: {
-          darkMode: true,
-          background: '#161b22',
-          primaryColor: '#1a2a3e',
-          primaryTextColor: '#e0e0e0',
-          primaryBorderColor: '#0e639c',
-          lineColor: '#8b949e',
-          secondaryColor: '#0d2a1a',
-          tertiaryColor: '#2a1a0d',
-          noteBkgColor: '#1a2a3e',
-          noteTextColor: '#c9d1d9',
-          noteBorderColor: '#30363d',
-          actorBkg: '#1a2a3e',
-          actorBorder: '#0e639c',
-          actorTextColor: '#e0e0e0',
-          actorLineColor: '#555',
-          signalColor: '#c9d1d9',
-          signalTextColor: '#c9d1d9',
-          labelBoxBkgColor: '#1a2a3e',
-          labelBoxBorderColor: '#30363d',
-          labelTextColor: '#e0e0e0',
-          loopTextColor: '#8b949e',
-          activationBorderColor: '#4ec9b0',
-          activationBkgColor: 'rgba(78, 201, 176, 0.15)',
-          sequenceNumberColor: '#fff',
-          classText: '#e0e0e0',
-        },
-        sequence: {
-          actorMargin: 50,
-          mirrorActors: false,
-          messageMargin: 40,
-          boxMargin: 10,
-          useMaxWidth: true,
-        },
-        flowchart: {
-          useMaxWidth: true,
-          htmlLabels: true,
-          curve: 'basis',
-        },
-      });
+      const definition = this.definition();
+
+      const cachedSvg = readCache(definition);
+      if (cachedSvg) {
+        this.renderedSvg = cachedSvg;
+        this.container().nativeElement.innerHTML = cachedSvg;
+        this.loading.set(false);
+        return;
+      }
 
       try {
+        const mermaid = await getMermaid();
+        initializeMermaid(mermaid);
+
         const uniqueId = `mermaid-graph-${++idCounter}`;
-        const { svg } = await mermaid.render(uniqueId, this.definition());
+        const { svg } = await mermaid.render(uniqueId, definition);
         this.renderedSvg = svg;
+        writeCache(definition, svg);
         this.container().nativeElement.innerHTML = svg;
       } catch (err) {
         console.error('Mermaid render error:', err);
